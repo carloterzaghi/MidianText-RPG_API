@@ -36,6 +36,8 @@ def verificar_senha(senha: str, hash_senha: str) -> bool:
 # Endpoint de Registro
 @app.post("/register")
 async def register(usuario: Usuario):
+    if len(usuario.username) > 14:
+        raise HTTPException(status_code=400, detail="Nome de usuário não pode ser maior que 14 caracteres!")
     if usuarios_collection.find_one({"username": usuario.username}):
         raise HTTPException(status_code=400, detail="Nome de usuário já existe!")
     
