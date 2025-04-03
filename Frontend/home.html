@@ -25,6 +25,7 @@
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             text-align: left;
+            display: none; /* Escondido por padrão */
         }
         h2, h3 {
             color: #333;
@@ -64,9 +65,11 @@
     </style>
 </head>
 <body>
+
     <h2>MidianText</h2>
     
-    <div class="container">
+    <!-- Tela de Login -->
+    <div class="container" id="login-container" style="display: block;">
         <h3>Login</h3>
         <input type="text" id="username" placeholder="Usuário">
         <input type="password" id="password" placeholder="Senha">
@@ -74,9 +77,10 @@
         <button onclick="login()">Login</button>
     </div>
 
-    <div class="container">
-        <h3>Batalha</h3>
-        <button onclick="batalha()">Atacar</button>
+    <!-- Menu do Jogo -->
+    <div class="container" id="menu-container">
+        <h3>Menu</h3>
+        <button onclick="batalha()">Iniciar Batalha</button>
         <p id="resultado"></p>
     </div>
 
@@ -116,6 +120,11 @@
                     throw new Error(dados.detail || "Credenciais inválidas");
                 }
                 alert(dados.message);
+
+                // Esconde a tela de login e exibe o menu do jogo
+                document.getElementById("login-container").style.display = "none";
+                document.getElementById("menu-container").style.display = "block";
+
             } catch (erro) {
                 alert("Erro: " + erro.message);
             }
@@ -127,9 +136,10 @@
                 const dados = await resposta.json();
                 document.getElementById("resultado").innerText = dados.batalha;
             } catch (erro) {
-                alert("Erro ao buscar batalha: " + erro.message);
+                alert("Erro ao iniciar batalha: " + erro.message);
             }
         }
     </script>
+
 </body>
 </html>
