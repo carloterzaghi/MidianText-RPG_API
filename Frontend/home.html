@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MidianText</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .container {
+            width: 90%;
+            max-width: 400px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: left;
+        }
+        h2, h3 {
+            color: #333;
+            text-align: center;
+        }
+        input {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            display: block;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #resultado {
+            font-weight: bold;
+            color: #333;
+            margin-top: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h2>RPG Medieval</h2>
+    
+    <div class="container">
+        <h3>Login</h3>
+        <input type="text" id="username" placeholder="Usuário">
+        <input type="password" id="password" placeholder="Senha">
+        <button onclick="registrar()">Registrar</button>
+        <button onclick="login()">Login</button>
+    </div>
+
+    <div class="container">
+        <h3>Batalha</h3>
+        <button onclick="batalha()">Atacar</button>
+        <p id="resultado"></p>
+    </div>
+
+    <script>
+        const apiUrl = "http://127.0.0.1:8000";
+
+        async function registrar() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            try {
+                const resposta = await fetch(`${apiUrl}/register`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password })
+                });
+                const dados = await resposta.json();
+                if (!resposta.ok) {
+                    throw new Error(dados.detail || "Erro ao registrar");
+                }
+                alert(dados.message);
+            } catch (erro) {
+                alert("Erro: " + erro.message);
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            try {
+                const resposta = await fetch(`${apiUrl}/login`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password })
+                });
+                const dados = await resposta.json();
+                if (!resposta.ok) {
+                    throw new Error(dados.detail || "Credenciais inválidas");
+                }
+                alert(dados.message);
+            } catch (erro) {
+                alert("Erro: " + erro.message);
+            }
+        }
+
+        async function batalha() {
+            try {
+                const resposta = await fetch(`${apiUrl}/batalha`);
+                const dados = await resposta.json();
+                document.getElementById("resultado").innerText = dados.batalha;
+            } catch (erro) {
+                alert("Erro ao buscar batalha: " + erro.message);
+            }
+        }
+    </script>
+</body>
+</html>
