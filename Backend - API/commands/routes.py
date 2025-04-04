@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException
-from commands.database import usuarios_collection
+from commands.database import usuarios_collection,personagens_collection
 from commands.models import Usuario, jogador, inimigo
-from commands.senhas_cripto import hash_senha, verificar_senha
+from commands.func_senhas import hash_senha, verificar_senha
+from bson import ObjectId
 
 router = APIRouter()
 
@@ -9,7 +10,8 @@ router = APIRouter()
 @router.post("/register")
 def register(usuario: Usuario) -> dict:
     """
-    Registra um novo usuário no banco de dados, aplicando hash e salt na senha.
+    Registra um novo usuário no banco de dados, aplicando hash e salt na senha,
+    e cria um personagem inicial associado ao usuário.
 
     Parâmetros:
         usuario (Usuario): Objeto contendo username e password.
@@ -29,6 +31,7 @@ def register(usuario: Usuario) -> dict:
             "password": "senha_secreta"
         }
     """
+
     if len(usuario.username) > 14:
         raise HTTPException(status_code=400, detail="O nome de usuário não pode ter mais que 14 caracteres!")
 
@@ -39,11 +42,18 @@ def register(usuario: Usuario) -> dict:
         raise HTTPException(status_code=400, detail="Usuário já existe")
 
     salt, senha_hash = hash_senha(usuario.password)
-    usuarios_collection.insert_one({
+    resultado = usuarios_collection.insert_one({
         "username": usuario.username,
         "salt": salt,
         "password": senha_hash
     })
+    user_id = resultado.inserted_id
+
+    personagens_collection.insert_one({
+        "user_id": ObjectId(user_id),
+        "personagens": []
+    })
+
     return {"message": "Usuário criado com sucesso"}
 
 # Endpoint de Login
@@ -75,6 +85,36 @@ def login(usuario: Usuario) -> dict:
         raise HTTPException(status_code=401, detail="Usuário ou Senha inválido!")
 
     return {"message": "Login bem-sucedido"}
+
+# Send personagens
+@router.get("/personagens/{username}", response_model=list)
+def get_personagens(username: str) -> list:
+    """
+    Obtém a lista de personagens associados a um usuário.
+
+    Esta rota busca no banco de dados a coleção de personagens de um usuário específico.
+    Se o usuário existir mas não tiver personagens cadastrados, retorna uma lista vazia.
+    Se o usuário não for encontrado, retorna um erro 404.
+
+    Parâmetros:
+        username (str): Nome de usuário do qual se deseja obter os personagens.
+
+    Retorna:
+        list: Lista contendo os personagens do usuário. Caso o usuário não possua 
+              personagens cadastrados, retorna uma lista vazia.
+
+    Erros:
+        404 - Usuário não encontrado.
+    """
+    
+    usuario = usuarios_collection.find_one({"username": username})
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    personagens = personagens_collection.find_one({"user_id": usuario["_id"]})
+
+    # Se `personagens` for None, retorna uma lista vazia
+    return personagens["personagens"]
 
 # Endpoint de Batalha
 @router.get("/batalha")

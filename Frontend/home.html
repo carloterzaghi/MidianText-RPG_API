@@ -25,7 +25,6 @@
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             text-align: left;
-            display: none; /* Escondido por padrão */
         }
         h2, h3 {
             color: #333;
@@ -56,20 +55,27 @@
         button:hover {
             background: #0056b3;
         }
-        #resultado {
+        #resultado, #menu, #personagens {
             font-weight: bold;
             color: #333;
             margin-top: 10px;
             text-align: center;
         }
+        .hidden {
+            display: none;
+        }
+        .personagem {
+            padding: 10px;
+            background: #e0e0e0;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
-
     <h2>MidianText</h2>
     
-    <!-- Tela de Login -->
-    <div class="container" id="login-container" style="display: block;">
+    <div class="container" id="login-container">
         <h3>Login</h3>
         <input type="text" id="username" placeholder="Usuário">
         <input type="password" id="password" placeholder="Senha">
@@ -77,15 +83,22 @@
         <button onclick="login()">Login</button>
     </div>
 
-    <!-- Menu do Jogo -->
-    <div class="container" id="menu-container">
-        <h3>Menu</h3>
-        <button onclick="batalha()">Iniciar Batalha</button>
-        <p id="resultado"></p>
+    <div class="container hidden" id="menu">
+        <h3>Bem-vindo, <span id="user-name"></span>!</h3>
+        <button onclick="mostrarPersonagens()">Selecionar Personagem</button>
+        <button onclick="logout()">Sair</button>
+    </div>
+
+    <div class="container hidden" id="personagens">
+        <h3>Seus Personagens</h3>
+        <div id="lista-personagens"></div>
+        <button onclick="criarPersonagem()">Criar Personagem</button>
+        <button onclick="voltarMenu()">Voltar</button>
     </div>
 
     <script>
         const apiUrl = "http://127.0.0.1:8000";
+        let currentUser = null;
 
         async function registrar() {
             const username = document.getElementById("username").value;
@@ -119,27 +132,60 @@
                 if (!resposta.ok) {
                     throw new Error(dados.detail || "Credenciais inválidas");
                 }
-                alert(dados.message);
-
-                // Esconde a tela de login e exibe o menu do jogo
-                document.getElementById("login-container").style.display = "none";
-                document.getElementById("menu-container").style.display = "block";
-
+                currentUser = username;
+                document.getElementById("user-name").innerText = username;
+                document.getElementById("login-container").classList.add("hidden");
+                document.getElementById("menu").classList.remove("hidden");
             } catch (erro) {
                 alert("Erro: " + erro.message);
             }
         }
 
-        async function batalha() {
-            try {
-                const resposta = await fetch(`${apiUrl}/batalha`);
-                const dados = await resposta.json();
-                document.getElementById("resultado").innerText = dados.batalha;
-            } catch (erro) {
-                alert("Erro ao iniciar batalha: " + erro.message);
+        async function mostrarPersonagens() {
+        if (!currentUser) return;
+
+        try {
+            const resposta = await fetch(`${apiUrl}/personagens/${currentUser}`);
+            const dados = await resposta.json();
+            if (!resposta.ok) {
+                throw new Error(dados.detail || "Erro ao buscar personagens");
             }
+
+            const lista = document.getElementById("lista-personagens");
+            lista.innerHTML = "";
+
+            if (!dados.personagens || dados.personagens.length === 0) {
+                lista.innerHTML = "<p>Nenhum personagem encontrado.</p>";
+            } else {
+                dados.personagens.forEach(personagem => {
+                    const div = document.createElement("div");
+                    div.classList.add("personagem");
+                    div.innerText = personagem.nome;
+                    lista.appendChild(div);
+                });
+            }
+
+            document.getElementById("menu").classList.add("hidden");
+            document.getElementById("personagens").classList.remove("hidden");
+        } catch (erro) {
+            alert("Erro: " + erro.message);
+        }
+    }
+
+        function criarPersonagem() {
+            alert("Aqui será a funcionalidade para criar personagens!");
+        }
+
+        function voltarMenu() {
+            document.getElementById("personagens").classList.add("hidden");
+            document.getElementById("menu").classList.remove("hidden");
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById("menu").classList.add("hidden");
+            document.getElementById("login-container").classList.remove("hidden");
         }
     </script>
-
 </body>
 </html>
