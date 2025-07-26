@@ -14,7 +14,7 @@ Midian Text é uma API backend desenvolvida com **FastAPI** que gerencia funcion
 Para instalar as dependências necessárias, execute:
 
 ```bash
-pip install fastapi uvicorn pymongo bcrypt python-dotenv
+pip install fastapi uvicorn pymongo bcrypt python-dotenv requests
 ```
 
 ## Execução da API
