@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from commands.database import usuarios_collection, personagens_collection
 from commands.models.user_model import Usuario
 from commands.func_senhas import hash_senha, verificar_senha
+from commands.key_manager import generate_key
 
 router = APIRouter()
 
@@ -86,9 +87,14 @@ def login(usuario: Usuario) -> dict:
     if not query:
         raise HTTPException(status_code=401, detail="Usuário ou Senha inválido!")
 
-    user = query[0].to_dict()
+    user_doc = query[0]
+    user = user_doc.to_dict()
+    user_id = user_doc.id
+
     if not verificar_senha(usuario.password, user["salt"], user["password"]):
         raise HTTPException(status_code=401, detail="Usuário ou Senha inválido!")
 
-    return {"message": "Login bem-sucedido"}
+    # Gera a chave temporária
+    temp_key = generate_key(user_id)
 
+    return {"message": "Login bem-sucedido", "key": temp_key}
