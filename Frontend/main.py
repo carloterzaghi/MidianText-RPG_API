@@ -14,17 +14,21 @@ def login_user(username, password):
     response = requests.post(url, json=data)
     return response.json()
 
-def get_personagens(username):
-    url = f"{BASE_URL}/personagens/{username}"
-    response = requests.get(url)
+def get_personagens(token):
+    url = f"{BASE_URL}/personagens"
+    headers = {"Authorization": f"Bearer {token}"}
+    response = requests.get(url, headers=headers)
     return response.json()
 
 def main():
+    token = None
     while True:
         print("Bem-vindo ao MidianText RPG!")
         print("1. Registrar")
         print("2. Login")
-        print("3. Sair")
+        print("3. Ver Personagens")
+        print("4. Deslogar")
+        print("5. Sair")
         choice = input("Escolha uma opção: ")
 
         if choice == '1':
@@ -37,10 +41,24 @@ def main():
             password = input("Digite sua senha: ")
             result = login_user(username, password)
             print(result)
-            if "message" in result and "bem-sucedido" in result["message"]:
-                personagens = get_personagens(username)
-                print("Personagens:", personagens)
+            if "key" in result:
+                token = result["key"]
+                print("Login realizado com sucesso!")
+            else:
+                print("Falha no login.")
         elif choice == '3':
+            if not token:
+                print("Você precisa estar logado para ver seus personagens.")
+            else:
+                personagens = get_personagens(token)
+                print("Personagens:", personagens)
+        elif choice == '4':
+            if token:
+                token = None
+                print("Você foi deslogado com sucesso.")
+            else:
+                print("Você já está deslogado.")
+        elif choice == '5':
             break
         else:
             print("Opção inválida. Tente novamente.")
