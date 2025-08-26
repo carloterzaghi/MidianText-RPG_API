@@ -1,34 +1,83 @@
-# Midian Text
+# Midian Text RPG
 
-Midian Text é uma API backend desenvolvida com **FastAPI** que gerencia funcionalidades essenciais para um jogo de RPG. Esta API permite o registro de usuários, login, gerenciamento de personagens e simulação de batalhas simples entre jogador e inimigo. Os dados são armazenados em um banco de dados **Firebase Firestore**, e as senhas são protegidas utilizando hash e salt via bcrypt.
+Midian Text é uma API backend desenvolvida com **FastAPI** para gerenciar funcionalidades essenciais de um jogo de RPG.  
+Permite registro e login de usuários, gerenciamento de personagens e simulação de batalhas simples.  
+Os dados são armazenados no **Firebase Firestore** e as senhas são protegidas com hash e salt via bcrypt.
 
 ## Instalação
 
 ### Pré-requisitos
 
 - **Python 3.12+**
-- Conta no **Firebase** e um projeto configurado no [Firebase Console](https://console.firebase.google.com/)
-- Arquivo de credenciais do Firebase (`firebase.json`) na pasta `commands/keys`
+- Conta no **Firebase** e projeto criado no [Firebase Console](https://console.firebase.google.com/)
+- Arquivo de credenciais do Firebase (`firebase.json`) na pasta `Backend - API/commands/keys`
+- Arquivo `.env` na raiz do projeto, contendo sua chave secreta:
+  ```
+  SECRET_KEY=sua-chave-secreta-aqui
+  ```
 
 ### Dependências
 
-Para instalar as dependências necessárias, execute:
+Instale as dependências com:
 
 ```bash
-pip install fastapi uvicorn firebase-admin bcrypt python-dotenv requests
+pip install -r requirements.txt
 ```
 
-## Execução da API
+## Execução da API e Frontend
 
-Para iniciar a API, execute o seguinte comando na raiz do projeto:
+Para iniciar a API e o frontend juntos, execute:
 
 ```bash
-uvicorn main:app --reload
+python run.py
 ```
 
-Esse comando inicia o servidor **Uvicorn** com recarregamento automático em [http://127.0.0.1:8000](http://127.0.0.1:8000).
+Ou, para rodar manualmente:
 
-Você pode acessar a documentação interativa dos endpoints em:
+**Backend:**
+```bash
+uvicorn "Backend - API/main:app" --reload
+```
+
+**Frontend (terminal):**
+```bash
+python Frontend/main.py
+```
+
+Acesse a documentação interativa dos endpoints em:
 
 [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+
+## Estrutura do Projeto
+
+```
+MidianText-RPG_API/
+│
+├── Backend - API/
+│   ├── main.py
+│   ├── commands/
+│   │   ├── database.py
+│   │   ├── func_senhas.py
+│   │   ├── key_manager.py
+│   │   ├── keys/
+│   │   │   └── firebase.json
+│   │   └── models/
+│   │       ├── character_model.py
+│   │       └── user_model.py
+│   │   └── routes/
+│   │       ├── login.py
+│   │       └── personagens.py
+│
+├── Frontend/
+│   └── main.py
+│
+├── requirements.txt
+├── run.py
+└── README.md
+```
+
+## Observações
+
+- O token gerado no login é temporário (expira em 30 minutos) e garante que cada usuário só acesse seus próprios dados.
+- Mantenha sua chave secreta (`SECRET_KEY`) protegida e nunca compartilhe o arquivo `firebase.json`
 
