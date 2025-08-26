@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from commands.database import usuarios_collection,personagens_collection
+from commands.database import usuarios_collection, personagens_collection
 from commands.models.user_model import Usuario
 
 router = APIRouter()
@@ -8,28 +8,22 @@ router = APIRouter()
 @router.get("/personagens/{username}", response_model=list)
 def get_personagens(username: str) -> list:
     """
-    Obtém a lista de personagens associados a um usuário.
-
-    Esta rota busca no banco de dados a coleção de personagens de um usuário específico.
-    Se o usuário existir mas não tiver personagens cadastrados, retorna uma lista vazia.
-    Se o usuário não for encontrado, retorna um erro 404.
-
-    Parâmetros:
-        username (str): Nome de usuário do qual se deseja obter os personagens.
-
-    Retorna:
-        list: Lista contendo os personagens do usuário. Caso o usuário não possua 
-              personagens cadastrados, retorna uma lista vazia.
-
-    Erros:
-        404 - Usuário não encontrado.
+    Obtém a lista de personagens associados a um usuário usando Firebase Firestore.
     """
-    
-    usuario = usuarios_collection.find_one({"username": username})
-    if not usuario:
+
+    # Busca o usuário pelo username
+    query = usuarios_collection.where("username", "==", username).get()
+    if not query:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
-    personagens = personagens_collection.find_one({"user_id": usuario["_id"]})
+    user_doc = query[0]
+    user_id = user_doc.id
 
-    # Se `personagens` for None, retorna uma lista vazia
-    return personagens["personagens"]
+    # Busca os personagens pelo user_id
+    personagens_doc = personagens_collection.document(user_id).get()
+    if not personagens_doc.exists:
+        return []
+
+    personagens_data = personagens_doc.to_dict().get("personagens", [])
+    
+    return personagens_data

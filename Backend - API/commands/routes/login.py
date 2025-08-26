@@ -1,8 +1,7 @@
 from fastapi import APIRouter, HTTPException
-from commands.database import usuarios_collection,personagens_collection
+from commands.database import usuarios_collection, personagens_collection
 from commands.models.user_model import Usuario
 from commands.func_senhas import hash_senha, verificar_senha
-from bson import ObjectId
 
 router = APIRouter()
 
@@ -38,19 +37,23 @@ def register(usuario: Usuario) -> dict:
     if len(usuario.password) > 14 or len(usuario.password) < 6:
         raise HTTPException(status_code=400, detail="A senha precisa ter entre 6 e 14 caracteres!")
 
-    if usuarios_collection.find_one({"username": usuario.username}):
+    # Verifica se o usuário já existe
+    query = usuarios_collection.where("username", "==", usuario.username).get()
+    if len(query) > 0:
         raise HTTPException(status_code=400, detail="Usuário já existe")
 
     salt, senha_hash = hash_senha(usuario.password)
-    resultado = usuarios_collection.insert_one({
+    # Adiciona usuário ao Firestore
+    user_ref = usuarios_collection.add({
         "username": usuario.username,
         "salt": salt,
         "password": senha_hash
     })
-    user_id = resultado.inserted_id
+    user_id = user_ref[1].id  # O ID do documento criado
 
-    personagens_collection.insert_one({
-        "user_id": ObjectId(user_id),
+    # Cria documento de personagens associado ao usuário
+    personagens_collection.document(user_id).set({
+        "user_id": user_id,
         "personagens": []
     })
 
@@ -79,9 +82,12 @@ def login(usuario: Usuario) -> dict:
             "password": "senha_secreta"
         }
     """
-    user = usuarios_collection.find_one({"username": usuario.username})
+    query = usuarios_collection.where("username", "==", usuario.username).get()
+    if not query:
+        raise HTTPException(status_code=401, detail="Usuário ou Senha inválido!")
 
-    if not user or not verificar_senha(usuario.password, user["salt"], user["password"]):
+    user = query[0].to_dict()
+    if not verificar_senha(usuario.password, user["salt"], user["password"]):
         raise HTTPException(status_code=401, detail="Usuário ou Senha inválido!")
 
     return {"message": "Login bem-sucedido"}
