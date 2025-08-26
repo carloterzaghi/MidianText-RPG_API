@@ -31,7 +31,7 @@ def run_script():
         
         # Inicia o Front-end em um novo terminal
         print("Abrindo o Frontend...")
-        subprocess.run(f'python Frontend/teste_front.py"', shell=True)
+        subprocess.run(f'python Frontend/main.py"', shell=True)
             
         print("Frontend aberto em uma nova janela.")
 
