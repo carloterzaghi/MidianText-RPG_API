@@ -1,139 +1,258 @@
-import kivy
-from kivy.app import App
-from kivy.uix.screenmanager import ScreenManager, Screen
-from kivy.properties import StringProperty, ObjectProperty
-
+import customtkinter as ctk
 import api_client
 
-# Definindo as telas
-class LoginScreen(Screen):
-    # ObjectProperty para referenciar os widgets do arquivo .kv
-    username_input = ObjectProperty(None)
-    password_input = ObjectProperty(None)
-    error_label = ObjectProperty(None)
+class App(ctk.CTk):
+    def __init__(self):
+        super().__init__()
 
-    def do_login(self, username, password):
-        """
-        Chamado quando o botão de login é pressionado.
-        """
+        self.title("MidianText RPG")
+        self.geometry("400x500")
+
+        # store user data
+        self.access_token = None
+        self.current_user = None
+
+        # create a container for screens
+        container = ctk.CTkFrame(self)
+        container.pack(side="top", fill="both", expand=True)
+        container.grid_rowconfigure(0, weight=1)
+        container.grid_columnconfigure(0, weight=1)
+
+        self.screens = {}
+
+        for F in (LoginScreen, RegisterScreen, HomeScreen):
+            page_name = F.__name__
+            frame = F(parent=container, controller=self)
+            self.screens[page_name] = frame
+            frame.grid(row=0, column=0, sticky="nsew")
+
+        self.show_screen("LoginScreen")
+
+    def show_screen(self, page_name):
+        '''Show a screen for the given page name'''
+        screen = self.screens[page_name]
+        if page_name == "HomeScreen":
+            screen.on_enter()
+        screen.tkraise()
+
+class LoginScreen(ctk.CTkFrame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+
+        self.grid_columnconfigure(0, weight=1)
+
+        label = ctk.CTkLabel(self, text="Login", font=ctk.CTkFont(size=20, weight="bold"))
+        label.grid(row=0, column=0, padx=10, pady=(40, 20))
+
+        self.username_input = ctk.CTkEntry(self, placeholder_text="Username")
+        self.username_input.grid(row=1, column=0, padx=40, pady=10, sticky="ew")
+
+        # Campo de senha e botão de mostrar/ocultar
+        self.password_input = ctk.CTkEntry(self, placeholder_text="Password", show="*")
+        self.password_input.grid(row=2, column=0, padx=40, pady=10, sticky="ew")
+
+        self.show_password = False
+        self.toggle_password_btn = ctk.CTkButton(
+            self, text="Mostrar", width=60, command=self.toggle_password
+        )
+        self.toggle_password_btn.grid(row=2, column=1, padx=(0, 20), pady=10)
+
+        login_button = ctk.CTkButton(self, text="Login", command=self.do_login)
+        login_button.grid(row=3, column=0, padx=40, pady=20, sticky="ew", columnspan=2)
+
+        self.error_label = ctk.CTkLabel(self, text="", text_color="red")
+        self.error_label.grid(row=4, column=0, padx=10, pady=5, columnspan=2)
+
+        register_button = ctk.CTkButton(
+            self,
+            text="Não tem uma conta? Registre-se",
+            command=lambda: controller.show_screen("RegisterScreen"),
+            fg_color="#2e86de",  # azul
+            text_color="white",
+            hover_color="#145a96"
+        )
+        register_button.grid(row=5, column=0, padx=10, pady=(10, 20), columnspan=2)
+
+    def toggle_password(self):
+        self.show_password = not self.show_password
+        if self.show_password:
+            self.password_input.configure(show="")
+            self.toggle_password_btn.configure(text="Ocultar")
+        else:
+            self.password_input.configure(show="*")
+            self.toggle_password_btn.configure(text="Mostrar")
+
+    def do_login(self):
+        username = self.username_input.get()
+        password = self.password_input.get()
+
         if not username or not password:
-            self.error_label.text = 'Usuário e senha são obrigatórios.'
+            self.error_label.configure(text='Usuário e senha são obrigatórios.')
             return
 
         response = api_client.login_user(username, password)
 
-        if response and 'access_token' in response:
-            app = App.get_running_app()
-            app.access_token = response['access_token']
-            app.current_user = username # Assumindo que o nome de usuário é o que usamos para logar
-            self.manager.current = 'home'
-            # Limpar campos e erros ao sair
-            self.username_input.text = ""
-            self.password_input.text = ""
-            self.error_label.text = ""
+        # Ajuste para esperar por "key" igual ao teste_front.py
+        if response and 'key' in response:
+            self.controller.access_token = response['key']
+            self.controller.current_user = username
+            self.controller.show_screen('HomeScreen')
+            self.username_input.delete(0, 'end')
+            self.password_input.delete(0, 'end')
+            self.error_label.configure(text="")
         else:
-            error_msg = response.get('detail') or 'Login falhou. Verifique suas credenciais.'
-            if isinstance(error_msg, list): # O FastAPI pode retornar uma lista de erros
-                error_msg = error_msg[0].get('msg', 'Erro desconhecido')
-            self.error_label.text = str(error_msg)
+            # Mensagem de sucesso do registro
+            if response.get("success_message"):
+                self.error_label.configure(text=response["success_message"], text_color="green")
+            else:
+                error_msg = response.get('detail') or 'Login falhou. Verifique suas credenciais.'
+                if isinstance(error_msg, list):
+                    error_msg = error_msg[0].get('msg', 'Erro desconhecido')
+                self.error_label.configure(text=str(error_msg), text_color="red")
 
 
-class RegisterScreen(Screen):
-    username_input = ObjectProperty(None)
-    password_input = ObjectProperty(None)
-    status_label = ObjectProperty(None)
+class RegisterScreen(ctk.CTkFrame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
 
-    def do_register(self, username, password):
-        """
-        Chamado quando o botão de registro é pressionado.
-        """
+        self.grid_columnconfigure(0, weight=1)
+
+        label = ctk.CTkLabel(self, text="Registrar", font=ctk.CTkFont(size=20, weight="bold"))
+        label.grid(row=0, column=0, padx=10, pady=(40, 20))
+
+        self.username_input = ctk.CTkEntry(self, placeholder_text="Username")
+        self.username_input.grid(row=1, column=0, padx=40, pady=10, sticky="ew")
+
+        # Campo de senha e botão de mostrar/ocultar
+        self.password_input = ctk.CTkEntry(self, placeholder_text="Password", show="*")
+        self.password_input.grid(row=2, column=0, padx=40, pady=10, sticky="ew")
+
+        self.show_password = False
+        self.toggle_password_btn = ctk.CTkButton(
+            self, text="Mostrar", width=60, command=self.toggle_password
+        )
+        self.toggle_password_btn.grid(row=2, column=1, padx=(0, 20), pady=10)
+
+        register_button = ctk.CTkButton(self, text="Registrar", command=self.do_register)
+        register_button.grid(row=3, column=0, padx=40, pady=20, sticky="ew", columnspan=2)
+
+        self.status_label = ctk.CTkLabel(self, text="")
+        self.status_label.grid(row=4, column=0, padx=10, pady=5, columnspan=2)
+
+        back_button = ctk.CTkButton(
+            self,
+            text="Já tem uma conta? Faça o login",
+            command=lambda: controller.show_screen("LoginScreen"),
+            fg_color="#2e86de",  # azul
+            text_color="white",
+            hover_color="#145a96"
+        )
+        back_button.grid(row=5, column=0, padx=10, pady=(10, 20), columnspan=2)
+
+    def toggle_password(self):
+        self.show_password = not self.show_password
+        if self.show_password:
+            self.password_input.configure(show="")
+            self.toggle_password_btn.configure(text="Ocultar")
+        else:
+            self.password_input.configure(show="*")
+            self.toggle_password_btn.configure(text="Mostrar")
+
+    def do_register(self):
+        username = self.username_input.get()
+        password = self.password_input.get()
+
         if not username or not password:
-            self.status_label.text = 'Usuário e senha são obrigatórios.'
-            self.status_label.color = (1, 0.3, 0.3, 1) # Cor de erro
+            self.status_label.configure(text='Usuário e senha são obrigatórios.', text_color="red")
             return
 
         response = api_client.register_user(username, password)
 
+        # Ajuste para esperar por "message" igual ao teste_front.py
         if response and response.get('message') == 'User created successfully':
-            self.status_label.text = 'Usuário criado com sucesso! Volte e faça o login.'
-            self.status_label.color = (0.3, 1, 0.3, 1) # Cor de sucesso
-            self.username_input.text = ""
-            self.password_input.text = ""
+            # Passa mensagem para tela de login e troca de tela
+            self.controller.screens["LoginScreen"].error_label.configure(
+                text="Usuário criado com sucesso! Faça o login.", text_color="green"
+            )
+            self.controller.show_screen("LoginScreen")
+            self.username_input.delete(0, 'end')
+            self.password_input.delete(0, 'end')
+            self.status_label.configure(text="")
         else:
-            error_msg = response.get('detail') or 'Falha no registro.'
+            error_msg = response.get('detail') or response.get('message') or 'Falha no registro.'
             if isinstance(error_msg, list):
                 error_msg = error_msg[0].get('msg', 'Erro desconhecido')
-            self.status_label.text = str(error_msg)
-            self.status_label.color = (1, 0.3, 0.3, 1) # Cor de erro
+            self.status_label.configure(text=str(error_msg), text_color="red")
 
 
-from kivy.uix.label import Label
+class HomeScreen(ctk.CTkFrame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
 
-class HomeScreen(Screen):
-    personagens_list = ObjectProperty(None)
-    user_label = ObjectProperty(None)
+        self.grid_rowconfigure(1, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+
+        top_frame = ctk.CTkFrame(self, fg_color="transparent")
+        top_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+        top_frame.grid_columnconfigure(0, weight=1)
+
+        self.user_label = ctk.CTkLabel(top_frame, text="Usuário: ", font=ctk.CTkFont(size=16))
+        self.user_label.grid(row=0, column=0, sticky="w")
+
+        logout_button = ctk.CTkButton(top_frame, text="Sair", width=60, command=self.logout)
+        logout_button.grid(row=0, column=1, sticky="e")
+
+        self.personagens_list = ctk.CTkScrollableFrame(self, label_text="Personagens")
+        self.personagens_list.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+
 
     def on_enter(self):
-        """
-        Chamado quando a tela é exibida. Carrega os dados.
-        """
-        app = App.get_running_app()
-        self.user_label.text = f"Usuário: {app.current_user}"
+        self.user_label.configure(text=f"Usuário: {self.controller.current_user}")
         self.load_personagens()
 
     def load_personagens(self):
-        """
-        Busca os personagens da API e popula a lista.
-        """
-        app = App.get_running_app()
-        token = app.access_token
+        token = self.controller.access_token
         if not token:
-            # Se não houver token, volta para o login
-            self.manager.current = 'login'
+            self.controller.show_screen('login')
             return
 
-        # Limpa a lista antiga
-        self.personagens_list.clear_widgets()
+        # Clear old widgets
+        for widget in self.personagens_list.winfo_children():
+            widget.destroy()
 
         response = api_client.get_personagens(token)
 
         if response and 'personagens' in response:
             for personagem in response['personagens']:
-                # Assumindo que cada personagem é um dicionário com uma chave 'nome'
                 nome = personagem.get('nome', 'Nome não encontrado')
-                item = Label(text=nome, size_hint_y=None, height=40)
-                self.personagens_list.add_widget(item)
+                item = ctk.CTkLabel(self.personagens_list, text=nome)
+                item.pack(padx=10, pady=5, anchor="w")
         else:
-            error_msg = response.get('detail', 'Não foi possível carregar os personagens.')
-            item = Label(text=error_msg, size_hint_y=None, height=40, color=(1,0,0,1))
-            self.personagens_list.add_widget(item)
+            # Corrigido para tratar lista de erros e dicionário
+            if isinstance(response, list):
+                # FastAPI/Pydantic error format
+                error_msg = "; ".join(
+                    [err.get('msg', str(err)) for err in response]
+                )
+            elif isinstance(response, dict):
+                error_msg = response.get('detail', 'Não foi possível carregar os personagens.')
+            else:
+                error_msg = 'Não foi possível carregar os personagens.'
+            item = ctk.CTkLabel(self.personagens_list, text=error_msg, text_color="red")
+            item.pack(padx=10, pady=5, anchor="w")
 
     def logout(self):
-        """
-        Limpa o estado do usuário e volta para a tela de login.
-        """
-        app = App.get_running_app()
-        app.access_token = None
-        app.current_user = None
-        self.manager.current = 'login'
-        # Limpa a lista ao sair
-        self.personagens_list.clear_widgets()
+        self.controller.access_token = None
+        self.controller.current_user = None
+        self.controller.show_screen('LoginScreen')
+        # Clear the list
+        for widget in self.personagens_list.winfo_children():
+            widget.destroy()
 
-# O ScreenManager
-class MyScreenManager(ScreenManager):
-    pass
 
-# A classe principal da App
-class MainApp(App):
-    # Propriedades para armazenar o estado global
-    access_token = StringProperty(None)
-    current_user = StringProperty(None)
-
-    def build(self):
-        # O Kivy carrega automaticamente o arquivo 'main.kv'
-        # e o associa a esta classe App.
-        # O widget raiz no .kv deve ser o MyScreenManager.
-        return MyScreenManager()
-
-if __name__ == '__main__':
-    MainApp().run()
+if __name__ == "__main__":
+    app = App()
+    app.mainloop()
