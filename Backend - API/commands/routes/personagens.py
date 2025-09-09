@@ -5,7 +5,6 @@ from commands.key_manager import verify_key
 
 router = APIRouter()
 
-# Send personagens
 @router.get("/personagens", response_model=list)
 def get_personagens(authorization: str = Header(None)) -> list:
     """

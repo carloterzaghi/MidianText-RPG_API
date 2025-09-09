@@ -6,7 +6,7 @@ class App(ctk.CTk):
         super().__init__()
 
         self.title("MidianText RPG")
-        self.geometry("400x500")
+        self.state('zoomed')
 
         # store user data
         self.access_token = None
@@ -40,39 +40,43 @@ class LoginScreen(ctk.CTkFrame):
         super().__init__(parent)
         self.controller = controller
 
+        self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-        label = ctk.CTkLabel(self, text="Login", font=ctk.CTkFont(size=20, weight="bold"))
-        label.grid(row=0, column=0, padx=10, pady=(40, 20))
+        # Frame principal para centralizar o conteúdo
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        main_frame.grid(row=0, column=0)
 
-        self.username_input = ctk.CTkEntry(self, placeholder_text="Username")
-        self.username_input.grid(row=1, column=0, padx=40, pady=10, sticky="ew")
+        label = ctk.CTkLabel(main_frame, text="Login", font=ctk.CTkFont(size=32, weight="bold"))
+        label.grid(row=0, column=0, columnspan=2, padx=10, pady=(40, 30))
 
-        # Campo de senha e botão de mostrar/ocultar
-        self.password_input = ctk.CTkEntry(self, placeholder_text="Password", show="*")
-        self.password_input.grid(row=2, column=0, padx=40, pady=10, sticky="ew")
+        self.username_input = ctk.CTkEntry(main_frame, placeholder_text="Username", width=300, height=40)
+        self.username_input.grid(row=1, column=0, columnspan=2, padx=40, pady=10)
+
+        self.password_input = ctk.CTkEntry(main_frame, placeholder_text="Password", show="*", width=300, height=40)
+        self.password_input.grid(row=2, column=0, columnspan=2, padx=40, pady=10)
 
         self.show_password = False
         self.toggle_password_btn = ctk.CTkButton(
-            self, text="Mostrar", width=60, command=self.toggle_password
+            main_frame, text="Mostrar", width=80, height=40, command=self.toggle_password
         )
-        self.toggle_password_btn.grid(row=2, column=1, padx=(0, 20), pady=10)
+        self.toggle_password_btn.grid(row=2, column=1, padx=(0, 40), sticky="e")
 
-        login_button = ctk.CTkButton(self, text="Login", command=self.do_login)
-        login_button.grid(row=3, column=0, padx=40, pady=20, sticky="ew", columnspan=2)
+        login_button = ctk.CTkButton(main_frame, text="Login", command=self.do_login, width=300, height=40)
+        login_button.grid(row=3, column=0, columnspan=2, padx=40, pady=20)
 
-        self.error_label = ctk.CTkLabel(self, text="", text_color="red")
-        self.error_label.grid(row=4, column=0, padx=10, pady=5, columnspan=2)
+        self.error_label = ctk.CTkLabel(main_frame, text="", text_color="red")
+        self.error_label.grid(row=4, column=0, columnspan=2, padx=10, pady=5)
 
         register_button = ctk.CTkButton(
-            self,
+            main_frame,
             text="Não tem uma conta? Registre-se",
             command=lambda: controller.show_screen("RegisterScreen"),
-            fg_color="#2e86de",  # azul
-            text_color="white",
-            hover_color="#145a96"
+            fg_color="transparent",
+            text_color="#2e86de",
+            hover_color="#1e1e1e"
         )
-        register_button.grid(row=5, column=0, padx=10, pady=(10, 20), columnspan=2)
+        register_button.grid(row=5, column=0, columnspan=2, padx=10, pady=(10, 20))
 
     def toggle_password(self):
         self.show_password = not self.show_password
@@ -117,39 +121,43 @@ class RegisterScreen(ctk.CTkFrame):
         super().__init__(parent)
         self.controller = controller
 
+        self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-        label = ctk.CTkLabel(self, text="Registrar", font=ctk.CTkFont(size=20, weight="bold"))
-        label.grid(row=0, column=0, padx=10, pady=(40, 20))
+        # Frame principal para centralizar o conteúdo
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        main_frame.grid(row=0, column=0)
 
-        self.username_input = ctk.CTkEntry(self, placeholder_text="Username")
-        self.username_input.grid(row=1, column=0, padx=40, pady=10, sticky="ew")
+        label = ctk.CTkLabel(main_frame, text="Registrar", font=ctk.CTkFont(size=32, weight="bold"))
+        label.grid(row=0, column=0, columnspan=2, padx=10, pady=(40, 30))
 
-        # Campo de senha e botão de mostrar/ocultar
-        self.password_input = ctk.CTkEntry(self, placeholder_text="Password", show="*")
-        self.password_input.grid(row=2, column=0, padx=40, pady=10, sticky="ew")
+        self.username_input = ctk.CTkEntry(main_frame, placeholder_text="Username", width=300, height=40)
+        self.username_input.grid(row=1, column=0, columnspan=2, padx=40, pady=10)
+
+        self.password_input = ctk.CTkEntry(main_frame, placeholder_text="Password", show="*", width=300, height=40)
+        self.password_input.grid(row=2, column=0, columnspan=2, padx=40, pady=10)
 
         self.show_password = False
         self.toggle_password_btn = ctk.CTkButton(
-            self, text="Mostrar", width=60, command=self.toggle_password
+            main_frame, text="Mostrar", width=80, height=40, command=self.toggle_password
         )
-        self.toggle_password_btn.grid(row=2, column=1, padx=(0, 20), pady=10)
+        self.toggle_password_btn.grid(row=2, column=1, padx=(0, 40), sticky="e")
 
-        register_button = ctk.CTkButton(self, text="Registrar", command=self.do_register)
-        register_button.grid(row=3, column=0, padx=40, pady=20, sticky="ew", columnspan=2)
+        register_button = ctk.CTkButton(main_frame, text="Registrar", command=self.do_register, width=300, height=40)
+        register_button.grid(row=3, column=0, columnspan=2, padx=40, pady=20)
 
-        self.status_label = ctk.CTkLabel(self, text="")
-        self.status_label.grid(row=4, column=0, padx=10, pady=5, columnspan=2)
+        self.status_label = ctk.CTkLabel(main_frame, text="")
+        self.status_label.grid(row=4, column=0, columnspan=2, padx=10, pady=5)
 
         back_button = ctk.CTkButton(
-            self,
+            main_frame,
             text="Já tem uma conta? Faça o login",
             command=lambda: controller.show_screen("LoginScreen"),
-            fg_color="#2e86de",  # azul
-            text_color="white",
-            hover_color="#145a96"
+            fg_color="transparent",
+            text_color="#2e86de",
+            hover_color="#1e1e1e"
         )
-        back_button.grid(row=5, column=0, padx=10, pady=(10, 20), columnspan=2)
+        back_button.grid(row=5, column=0, columnspan=2, padx=10, pady=(10, 20))
 
     def toggle_password(self):
         self.show_password = not self.show_password
@@ -192,21 +200,27 @@ class HomeScreen(ctk.CTkFrame):
         super().__init__(parent)
         self.controller = controller
 
-        self.grid_rowconfigure(1, weight=1)
+        self.grid_rowconfigure(2, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
+        # Top bar
         top_frame = ctk.CTkFrame(self, fg_color="transparent")
-        top_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+        top_frame.grid(row=0, column=0, padx=20, pady=10, sticky="ew")
         top_frame.grid_columnconfigure(0, weight=1)
 
         self.user_label = ctk.CTkLabel(top_frame, text="Usuário: ", font=ctk.CTkFont(size=16))
         self.user_label.grid(row=0, column=0, sticky="w")
 
-        logout_button = ctk.CTkButton(top_frame, text="Sair", width=60, command=self.logout)
+        logout_button = ctk.CTkButton(top_frame, text="Sair", width=80, height=30, command=self.logout)
         logout_button.grid(row=0, column=1, sticky="e")
 
+        # Main title
+        title_label = ctk.CTkLabel(self, text="Seus Personagens", font=ctk.CTkFont(size=32, weight="bold"))
+        title_label.grid(row=1, column=0, padx=20, pady=20)
+
+        # Personagens list
         self.personagens_list = ctk.CTkScrollableFrame(self, label_text="Personagens")
-        self.personagens_list.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+        self.personagens_list.grid(row=2, column=0, padx=20, pady=10, sticky="nsew")
 
 
     def on_enter(self):
@@ -226,10 +240,27 @@ class HomeScreen(ctk.CTkFrame):
         response = api_client.get_personagens(token)
 
         if response and 'personagens' in response:
-            for personagem in response['personagens']:
+            for i, personagem in enumerate(response['personagens']):
                 nome = personagem.get('nome', 'Nome não encontrado')
-                item = ctk.CTkLabel(self.personagens_list, text=nome)
-                item.pack(padx=10, pady=5, anchor="w")
+                
+                # Frame for each character
+                char_frame = ctk.CTkFrame(self.personagens_list, fg_color=("#f0f0f0", "#2e2e2e"), corner_radius=10)
+                char_frame.pack(fill="x", padx=10, pady=5)
+                
+                char_frame.grid_columnconfigure(0, weight=1)
+
+                # Character name
+                name_label = ctk.CTkLabel(char_frame, text=nome, font=ctk.CTkFont(size=16))
+                name_label.grid(row=0, column=0, padx=15, pady=10, sticky="w")
+
+                # "Ver detalhes" button
+                details_button = ctk.CTkButton(
+                    char_frame, 
+                    text="Ver detalhes", 
+                    width=120,
+                    # command=lambda p=personagem: self.show_character_details(p) # Implementar esta função
+                )
+                details_button.grid(row=0, column=1, padx=15, pady=10, sticky="e")
         else:
             # Corrigido para tratar lista de erros e dicionário
             if isinstance(response, list):
