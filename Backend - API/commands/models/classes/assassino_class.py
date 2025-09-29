@@ -3,11 +3,11 @@ from _main_classes import MainClasses
 class Assassino(MainClasses):
     def __init__(self):
         super().__init__()
-        self.hp_max = 12
-        self.hp_tmp = 12
-        self.strg = 4
-        self.mag = 15
-        self.spd = 8
-        self.luck = 4
-        self.defe = 5
-        self.mov = 2
+        self.hp_max = 15
+        self.hp_tmp = 15
+        self.strg = 8
+        self.mag = 6
+        self.spd = 12
+        self.luck = 6
+        self.defe = 8
+        self.mov = 4
