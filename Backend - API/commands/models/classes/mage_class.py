@@ -1,4 +1,4 @@
-from _main_classes import MainClasses
+from ._main_classes import MainClasses
 
 class Mago(MainClasses):
     def __init__(self):
