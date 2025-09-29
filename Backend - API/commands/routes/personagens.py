@@ -7,6 +7,7 @@ from commands.models.classes.assassino_class import Assassino
 from commands.models.classes.arqueiro_class import Arqueiro
 from commands.models.classes.mage_class import Mago
 from commands.models.classes.soldado_class import Soldado
+from commands.models.items_table import ItemTable
 
 router = APIRouter()
 
@@ -91,21 +92,34 @@ def criar_personagem(character_data: CharacterCreationRequest, authorization: st
     novo_personagem = Character(
         name=character_data.name,
         character_class=character_data.character_class,
-        class_instance=class_instance
+        class_instance=class_instance,
+        color=character_data.color
     )
     
-    # Adiciona o personagem à lista
-    personagens_existentes.append(novo_personagem.to_dict())
+    # Adiciona o personagem à lista (formato antigo para compatibilidade)
+    personagens_existentes.append(novo_personagem.to_dict_full())
     
-    # Salva no Firebase
+    # Salva no Firebase com nova estrutura: nome do personagem como chave
     try:
+        # Salvar na estrutura antiga (compatibilidade)
         personagens_collection.document(user_id).set({
             "personagens": personagens_existentes
         })
+        
+        # Salvar na nova estrutura: nome como chave
+        nova_estrutura = personagens_collection.document(user_id).get()
+        dados_atuais = nova_estrutura.to_dict() if nova_estrutura.exists else {}
+        
+        # Adicionar o personagem com nome como chave
+        dados_atuais[character_data.name] = novo_personagem.to_dict()
+        
+        # Atualizar documento com nova estrutura
+        personagens_collection.document(user_id).update(dados_atuais)
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao salvar personagem: {str(e)}")
     
-    return CharacterResponse(**novo_personagem.to_dict())
+    return CharacterResponse(**novo_personagem.to_dict_full())
 
 @router.get("/personagens/classes")
 def get_classes_disponiveis():
@@ -126,7 +140,106 @@ def get_classes_disponiveis():
                 "luck": instance.luck,
                 "defe": instance.defe,
                 "mov": instance.mov
-            }
+            },
+            "habilidades": getattr(instance, 'habilidades', [])
         }
     
     return classes_info
+
+@router.get("/personagens/cores")
+def get_cores_disponiveis():
+    """
+    Retorna as cores disponíveis e suas vantagens.
+    """
+    cores_info = {
+        "verde": {
+            "name": "🟢 Verde",
+            "emoji": "🟢",
+            "advantage": "azul",
+            "disadvantage": "vermelho",
+            "description": "Forte contra azul, fraco contra vermelho",
+            "damage_bonus": "x1.5 contra azul"
+        },
+        "vermelho": {
+            "name": "🔴 Vermelho",
+            "emoji": "🔴",
+            "advantage": "verde",
+            "disadvantage": "azul", 
+            "description": "Forte contra verde, fraco contra azul",
+            "damage_bonus": "x1.5 contra verde"
+        },
+        "azul": {
+            "name": "🔵 Azul",
+            "emoji": "🔵",
+            "advantage": "vermelho",
+            "disadvantage": "verde",
+            "description": "Forte contra vermelho, fraco contra verde",
+            "damage_bonus": "x1.5 contra vermelho"
+        },
+        "cinza": {
+            "name": "⚫ Cinza",
+            "emoji": "⚫",
+            "advantage": "nenhuma",
+            "disadvantage": "nenhuma",
+            "description": "Neutro - sem vantagens nem desvantagens",
+            "damage_bonus": "sem bônus"
+        }
+    }
+    
+    return {
+        "cores": cores_info,
+        "sistema": {
+            "description": "Sistema de vantagens como Pedra, Papel, Tesoura",
+            "regras": [
+                "Vermelho vence Verde (x1.5 dano)",
+                "Verde vence Azul (x1.5 dano)", 
+                "Azul vence Vermelho (x1.5 dano)",
+                "Cinza é neutro (sem bônus/penalidade)"
+            ]
+        }
+    }
+
+@router.get("/personagens/itens")
+def get_itens_disponiveis():
+    """
+    Retorna informações sobre todos os itens do jogo.
+    """
+    return ItemTable.get_items_summary()
+
+@router.get("/personagens/itens/{item_name}")
+def get_item_info(item_name: str):
+    """
+    Retorna informações detalhadas sobre um item específico.
+    """
+    item_info = ItemTable.get_item_info(item_name)
+    if not item_info:
+        raise HTTPException(status_code=404, detail="Item não encontrado")
+    
+    return {
+        "nome": item_name,
+        "informacoes": item_info
+    }
+
+@router.get("/personagens/itens/classe/{character_class}")
+def get_starting_items_for_class(character_class: str):
+    """
+    Retorna os itens iniciais para uma classe específica.
+    """
+    valid_classes = ['Assassino', 'Arqueiro', 'Mago', 'Soldado']
+    if character_class not in valid_classes:
+        raise HTTPException(status_code=400, detail="Classe inválida")
+    
+    starting_items = ItemTable.get_starting_items(character_class)
+    detailed_items = {}
+    
+    for item_name, quantity in starting_items.items():
+        item_info = ItemTable.get_item_info(item_name)
+        detailed_items[item_name] = {
+            "quantidade": quantity,
+            "info": item_info
+        }
+    
+    return {
+        "classe": character_class,
+        "itens_iniciais": detailed_items
+    }

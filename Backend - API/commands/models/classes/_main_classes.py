@@ -26,7 +26,7 @@ class MainClasses():
         }
     
     def put_color(self, color):
-        if color in ["green", "red", "blue", "gray"]:
+        if color in ["verde", "vermelho", "azul", "cinza"]:
             self.color = color
             return True  # retorna sucesso
         return False  # retorna falha se o status não existir

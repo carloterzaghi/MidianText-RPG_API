@@ -134,15 +134,15 @@ class CharacterCreatorApp:
             self.show_login_message(f"Erro no registro: {result['error']}", "error")
             self.enable_login_buttons()
         else:
-            self.show_login_message("✅ Usuário registrado! Fazendo login automático...", "success")
+            self.show_login_message("Usuário registrado! Fazendo login automático...", "success")
             self.root.update()
             
-            print(f"📝 Fazendo login automático para: {username}")
+            print(f"Fazendo login automático para: {username}")
             
             # Fazer login automaticamente após registro bem-sucedido
             login_result = login_user(username, password)
             
-            print(f"🔐 Resultado do login automático: {login_result}")
+            print(f"Resultado do login automático: {login_result}")
             
             if "error" in login_result:
                 self.show_login_message(f"Registro realizado, mas erro no login automático: {login_result['error']}", "error")
@@ -151,8 +151,8 @@ class CharacterCreatorApp:
                 self.token = login_result["access_token"]
                 self.username = username
                 self.show_login_message("🎉 Bem-vindo! Redirecionando...", "success")
-                print(f"✅ Token obtido: {self.token[:20]}...")
-                print("🚀 Iniciando redirecionamento...")
+                print(f"Token obtido: {self.token[:20]}...")
+                print("Iniciando redirecionamento...")
                 # Limpar campos
                 self.clear_login_fields()
                 # Redirecionamento imediato forçado
@@ -192,19 +192,19 @@ class CharacterCreatorApp:
     
     def force_redirect_to_main(self):
         """Força redirecionamento para a interface principal."""
-        print("🔄 Executando redirecionamento forçado...")
+        print("Executando redirecionamento forçado...")
         try:
             # Pequeno delay para garantir que a mensagem seja vista
             self.root.after(800, self.create_main_interface)
         except Exception as e:
-            print(f"❌ Erro no redirecionamento: {e}")
+            print(f"Erro no redirecionamento: {e}")
             # Fallback direto
             self.create_main_interface()
     
     def create_main_interface(self):
         """Cria a interface principal com criação e listagem de personagens."""
-        print(f"🏠 Criando interface principal para usuário: {self.username}")
-        print(f"🔑 Token disponível: {'Sim' if self.token else 'Não'}")
+        print(f"Criando interface principal para usuário: {self.username}")
+        print(f"Token disponível: {'Sim' if self.token else 'Não'}")
         
         # Limpar a janela
         for widget in self.root.winfo_children():
@@ -257,6 +257,7 @@ class CharacterCreatorApp:
         ttk.Label(name_frame, text="Nome do Personagem:").pack(side='left')
         self.character_name_entry = ttk.Entry(name_frame, width=30)
         self.character_name_entry.pack(side='left', padx=(10, 0))
+        self.character_name_entry.bind('<KeyRelease>', lambda e: self.update_button_states())
         
         # Seleção de classe
         class_frame = ttk.Frame(form_frame)
@@ -269,15 +270,53 @@ class CharacterCreatorApp:
         self.character_class_combo.pack(side='left', padx=(10, 0))
         self.character_class_combo.bind('<<ComboboxSelected>>', self.on_class_selected)
         
+        # Seleção de cor
+        color_frame = ttk.Frame(form_frame)
+        color_frame.pack(fill='x', pady=10)
+        
+        ttk.Label(color_frame, text="Cor:").pack(side='left')
+        self.character_color_var = tk.StringVar(value="cinza")
+        self.character_color_combo = ttk.Combobox(color_frame, textvariable=self.character_color_var,
+                                                 state='readonly', width=27)
+        self.character_color_combo.pack(side='left', padx=(10, 0))
+        self.character_color_combo.bind('<<ComboboxSelected>>', self.on_color_selected)
+        
         # Frame para mostrar estatísticas da classe
-        self.stats_frame = ttk.LabelFrame(form_frame, text="Estatísticas da Classe", padding="15")
+        self.stats_frame = ttk.LabelFrame(form_frame, text="📊 Estatísticas da Classe", padding="15")
         self.stats_frame.pack(fill='x', pady=20)
         
-        # Botão criar
+        # Descrição da classe
+        self.class_description_frame = ttk.LabelFrame(form_frame, text="📖 Descrição da Classe", padding="15")
+        self.class_description_frame.pack(fill='x', pady=(0, 20))
+        
+        self.class_description_label = ttk.Label(self.class_description_frame, text="Selecione uma classe para ver a descrição", 
+                                                style='Info.TLabel', wraplength=600)
+        self.class_description_label.pack()
+        
+        # Informações sobre cores e vantagens
+        self.color_info_frame = ttk.LabelFrame(form_frame, text="🎨 Sistema de Cores", padding="15")
+        self.color_info_frame.pack(fill='x', pady=(0, 20))
+        
+        self.color_info_label = ttk.Label(self.color_info_frame,
+                                         text="🔴 Vermelho > 🟢 Verde > 🔵 Azul > 🔴 Vermelho | ⚫ Cinza = Neutro\nVantagem = x1.5 dano",
+                                         style='Info.TLabel', wraplength=600, justify='center')
+        self.color_info_label.pack()
+        
+        # Frame para botões
         button_frame = ttk.Frame(form_frame)
         button_frame.pack(pady=20)
         
-        ttk.Button(button_frame, text="Criar Personagem", command=self.create_character).pack()
+        # Botão para criar (preview)
+        self.create_button = ttk.Button(button_frame, text="🎯 Criar Personagem", command=self.create_character)
+        self.create_button.pack(side='left', padx=5)
+        
+        # Botão para salvar (confirmar)
+        self.save_button = ttk.Button(button_frame, text="💾 Salvar Personagem", command=self.save_character, state='disabled')
+        self.save_button.pack(side='left', padx=5)
+        
+        # Botão limpar
+        self.clear_button = ttk.Button(button_frame, text="🗑️ Limpar", command=self.clear_form)
+        self.clear_button.pack(side='left', padx=5)
         
         # Label para mensagens
         self.create_message_label = ttk.Label(form_frame, text="", style='Info.TLabel')
@@ -332,36 +371,57 @@ class CharacterCreatorApp:
             self.classes_data = result
             class_names = list(self.classes_data.keys())
             self.character_class_combo['values'] = class_names
+        
+        # Carregar cores disponíveis
+        self.load_colors_data()
+    
+    def load_colors_data(self):
+        """Carrega os dados das cores disponíveis."""
+        from api_client import get_available_colors
+        result = get_available_colors()
+        
+        if "error" in result:
+            self.show_create_message(f"Erro ao carregar cores: {result['error']}", "error")
+        else:
+            self.colors_data = result
+            # Criar lista de cores com emojis
+            color_options = []
+            for color_key, color_info in result.get('cores', {}).items():
+                color_options.append(f"{color_info['emoji']} {color_key.title()}")
+            
+            if hasattr(self, 'character_color_combo'):
+                self.character_color_combo['values'] = color_options
+                self.character_color_combo.set("⚫ Cinza")  # Padrão
     
     def check_and_redirect_for_character_creation(self):
         """Verifica se o usuário tem personagens e redireciona para criação se não tiver."""
-        print(f"🔍 Verificando personagens para o usuário: {self.username}")
+        print(f"Verificando personagens para o usuário: {self.username}")
         
         # Buscar personagens do usuário
         result = get_personagens(self.token)
         
-        print(f"📋 Resultado da busca: {result}")
+        print(f"Resultado da busca: {result}")
         
         if "error" not in result and isinstance(result, list):
-            print(f"📊 Número de personagens encontrados: {len(result)}")
+            print(f"Número de personagens encontrados: {len(result)}")
             
             if len(result) == 0:  # Usuário não tem personagens
-                print("➡️ Redirecionando para aba de criação de personagens...")
+                print("Redirecionando para aba de criação de personagens...")
                 # Selecionar a aba de criação de personagens (índice 0)
                 self.notebook.select(0)
                 # Mostrar mensagem explicativa
                 self.show_welcome_message()
-                print("✅ Redirecionamento concluído!")
+                print("Redirecionamento concluído!")
             else:
-                print("➡️ Redirecionando para aba de listagem de personagens...")
+                print("Redirecionando para aba de listagem de personagens...")
                 # Usuário tem personagens, mostrar a aba de listagem (índice 1)
                 self.notebook.select(1)
                 # Carregar personagens na aba
                 self.load_characters()
-                print("✅ Redirecionamento para listagem concluído!")
+                print("Redirecionamento para listagem concluído!")
         else:
-            print("⚠️ Erro ao buscar personagens ou resultado inválido")
-            print(f"📄 Detalhes: {result}")
+            print("Erro ao buscar personagens ou resultado inválido")
+            print(f"Detalhes: {result}")
             # Em caso de erro, mostrar aba de criação por padrão
             self.notebook.select(0)
             self.show_welcome_message()
@@ -369,7 +429,7 @@ class CharacterCreatorApp:
     def show_welcome_message(self):
         """Mostra mensagem de boas-vindas para usuários sem personagens."""
         def show_message():
-            welcome_text = f"🎮 Bem-vindo ao Midian Text RPG, {self.username}!\n\nVocê ainda não tem personagens. Vamos criar seu primeiro aventureiro!\nEscolha uma classe abaixo e comece sua jornada épica! ⚔️"
+            welcome_text = f"Bem-vindo ao Midian Text RPG, {self.username}!\n\nVocê ainda não tem personagens. Vamos criar seu primeiro aventureiro!\nEscolha uma classe abaixo e comece sua jornada épica! ⚔️"
             self.show_create_message(welcome_text, "info")
             # Dar foco no campo de nome para facilitar a digitação
             if hasattr(self, 'character_name_entry'):
@@ -386,35 +446,106 @@ class CharacterCreatorApp:
         for widget in self.stats_frame.winfo_children():
             widget.destroy()
             
+        # Limpar descrição
+        self.class_description_label.configure(text="Selecione uma classe para ver a descrição")
+            
         if selected_class and selected_class in self.classes_data:
             stats = self.classes_data[selected_class]['stats']
             
-            # Criar grid de estatísticas
+            # Descrições das classes
+            class_descriptions = {
+                "Assassino": "🗡️ Especialista em velocidade e ataques furtivos. Alta velocidade e sorte, mas baixa defesa. Ideal para ataques rápidos e precisos.",
+                "Arqueiro": "🏹 Combatente balanceado com foco em ataques à distância. Boa velocidade e força, perfeito para táticas versáteis.",
+                "Mago": "🧙 Mestre das artes arcanas com grande poder mágico. Alta magia mas baixa defesa física. Devastador com feitiços.",
+                "Soldado": "🛡️ Tanque resistente com alta defesa e força. Baixa velocidade mas capaz de absorver muito dano. Protetor da equipe."
+            }
+            
+            # Atualizar descrição
+            description = class_descriptions.get(selected_class, "Descrição não disponível")
+            self.class_description_label.configure(text=description)
+            
+            # Título dos stats
+            title_label = ttk.Label(self.stats_frame, text=f"⚔️ {selected_class}", style='Subtitle.TLabel')
+            title_label.grid(row=0, column=0, columnspan=4, pady=(0, 10))
+            
+            # Criar grid de estatísticas com cores
             stats_info = [
-                ("HP Máximo:", stats['hp_max']),
-                ("Força:", stats['strg']),
-                ("Magia:", stats['mag']),
-                ("Velocidade:", stats['spd']),
-                ("Sorte:", stats['luck']),
-                ("Defesa:", stats['defe']),
-                ("Movimento:", stats['mov'])
+                ("❤️ HP Máximo:", stats['hp_max'], "#e74c3c"),
+                ("💪 Força:", stats['strg'], "#e67e22"),
+                ("✨ Magia:", stats['mag'], "#9b59b6"),
+                ("⚡ Velocidade:", stats['spd'], "#3498db"),
+                ("🍀 Sorte:", stats['luck'], "#f1c40f"),
+                ("🛡️ Defesa:", stats['defe'], "#2ecc71"),
+                ("🚀 Movimento:", stats['mov'], "#34495e")
             ]
             
-            for i, (label, value) in enumerate(stats_info):
-                row = i // 2
+            for i, (label, value, color) in enumerate(stats_info):
+                row = (i // 2) + 1  # +1 por causa do título
                 col = (i % 2) * 2
                 
-                ttk.Label(self.stats_frame, text=label, style='Stats.TLabel').grid(
-                    row=row, column=col, sticky='w', padx=5, pady=2
-                )
-                ttk.Label(self.stats_frame, text=str(value), style='Stats.TLabel').grid(
-                    row=row, column=col+1, sticky='w', padx=5, pady=2
-                )
+                # Label do stat
+                stat_label = ttk.Label(self.stats_frame, text=label, style='Stats.TLabel')
+                stat_label.grid(row=row, column=col, sticky='w', padx=5, pady=3)
+                
+                # Valor do stat com barra de progresso visual
+                value_frame = ttk.Frame(self.stats_frame)
+                value_frame.grid(row=row, column=col+1, sticky='w', padx=10, pady=3)
+                
+                # Número
+                value_label = ttk.Label(value_frame, text=f"{value:2d}", style='Stats.TLabel', width=3)
+                value_label.pack(side='left')
+                
+                # Barra visual (usando caracteres)
+                max_stat = 20  # Valor máximo possível
+                bar_length = 10
+                filled = int((value / max_stat) * bar_length)
+                bar = "█" * filled + "░" * (bar_length - filled)
+                bar_label = ttk.Label(value_frame, text=bar, font=('Courier', 8))
+                bar_label.pack(side='left', padx=(5, 0))
+            
+            # Habilitar botão de criar se nome também estiver preenchido
+            self.update_button_states()
+    
+    def update_button_states(self):
+        """Atualiza o estado dos botões baseado no preenchimento do formulário."""
+        name = self.character_name_entry.get().strip()
+        class_selected = self.character_class_var.get()
+        color_selected = self.character_color_var.get()
+        
+        if name and class_selected and color_selected:
+            self.create_button.configure(state='normal')
+        else:
+            self.create_button.configure(state='disabled')
+            self.save_button.configure(state='disabled')
+    
+    def on_color_selected(self, event=None):
+        """Atualiza as informações quando uma cor é selecionada."""
+        selected_color_display = self.character_color_var.get()
+        
+        if not selected_color_display or not hasattr(self, 'colors_data'):
+            return
+            
+        # Extrair a cor real do display (ex: "🔴 Vermelho" -> "vermelho")
+        color_name = selected_color_display.split(' ', 1)[1].lower() if ' ' in selected_color_display else "cinza"
+        
+        cores_info = self.colors_data.get('cores', {})
+        if color_name in cores_info:
+            color_info = cores_info[color_name]
+            
+            # Atualizar informação da cor
+            info_text = f"{color_info['name']}: {color_info['description']}\n"
+            info_text += f"Bônus: {color_info['damage_bonus']}"
+            
+            self.color_info_label.configure(text=info_text)
+        
+        # Atualizar estado dos botões
+        self.update_button_states()
     
     def create_character(self):
         """Cria um novo personagem."""
         name = self.character_name_entry.get().strip()
         character_class = self.character_class_var.get()
+        color_display = self.character_color_var.get()
         
         if not name:
             self.show_create_message("Por favor, digite um nome para o personagem.", "error")
@@ -424,23 +555,37 @@ class CharacterCreatorApp:
             self.show_create_message("Por favor, selecione uma classe.", "error")
             return
             
+        if not color_display:
+            self.show_create_message("Por favor, selecione uma cor.", "error")
+            return
+            
+        # Extrair cor real do display
+        color = color_display.split(' ', 1)[1].lower() if ' ' in color_display else "cinza"
+            
+        # Validação do nome
+        if len(name) < 2 or len(name) > 20:
+            self.show_create_message("O nome deve ter entre 2 e 20 caracteres.", "error")
+            return
+            
         self.show_create_message("Criando personagem...", "info")
         self.root.update()
         
-        result = create_character(self.token, name, character_class)
+        result = create_character(self.token, name, character_class, color)
         
         if "error" in result:
             self.show_create_message(f"Erro ao criar personagem: {result['error']}", "error")
         else:
-            self.show_create_message(f"Personagem '{name}' criado com sucesso!", "success")
-            # Limpar formulário
-            self.character_name_entry.delete(0, tk.END)
-            self.character_class_var.set('')
-            self.on_class_selected()  # Limpar estatísticas
+            self.show_create_message(f"Personagem '{name}' ({color}) criado com sucesso! 🎉", "success")
+            
+            # Habilitar botão de salvar (mesmo que já tenha salvado, para consistência da UI)
+            if hasattr(self, 'save_button'):
+                self.save_button.configure(state='normal')
+            
             # Atualizar lista de personagens
             self.load_characters()
-            # Redirecionar para aba de personagens após 2 segundos
-            self.root.after(2000, lambda: self.notebook.select(1))
+            
+            # Auto-redirect para aba de personagens após 3 segundos
+            self.root.after(3000, lambda: self.notebook.select(1))
     
     def show_create_message(self, message, msg_type):
         """Mostra uma mensagem na aba de criação."""
@@ -471,7 +616,7 @@ class CharacterCreatorApp:
             empty_frame = ttk.Frame(self.scrollable_frame)
             empty_frame.pack(expand=True, pady=50)
             
-            ttk.Label(empty_frame, text="🎮 Nenhum personagem encontrado!", 
+            ttk.Label(empty_frame, text="Nenhum personagem encontrado!", 
                      style='Subtitle.TLabel').pack(pady=10)
             ttk.Label(empty_frame, text="Comece sua aventura criando seu primeiro personagem!", 
                      style='Info.TLabel').pack(pady=5)
@@ -543,6 +688,43 @@ class CharacterCreatorApp:
         self.username = None
         self.create_login_interface()
     
+    def save_character(self):
+        """Salva o personagem atual (funcionalidade em desenvolvimento)."""
+        name = self.character_name_entry.get().strip()
+        character_class = self.character_class_var.get()
+        
+        if not name or not character_class:
+            self.show_create_message("Complete todos os campos antes de salvar.", "error")
+            return
+            
+        # Por enquanto, usar a mesma funcionalidade do create_character
+        self.show_create_message("Salvando personagem...", "info")
+        self.create_character()
+    
+    def clear_form(self):
+        """Limpa o formulário de criação."""
+        self.character_name_entry.delete(0, tk.END)
+        self.character_class_var.set("")
+        self.character_color_var.set("⚫ Cinza")
+        
+        # Limpar stats
+        for widget in self.stats_frame.winfo_children():
+            widget.destroy()
+            
+        # Limpar descrição
+        if hasattr(self, 'class_description_label'):
+            self.class_description_label.configure(text="Selecione uma classe para ver a descrição")
+        
+        # Limpar informação de cor
+        if hasattr(self, 'color_info_label'):
+            self.color_info_label.configure(text="🔴 Vermelho > 🟢 Verde > 🔵 Azul > 🔴 Vermelho | ⚫ Cinza = Neutro\nVantagem = x1.5 dano")
+        
+        # Atualizar estado dos botões
+        if hasattr(self, 'update_button_states'):
+            self.update_button_states()
+        
+        self.show_create_message("Formulário limpo.", "info")
+
     def run(self):
         """Inicia a aplicação."""
         self.root.mainloop()

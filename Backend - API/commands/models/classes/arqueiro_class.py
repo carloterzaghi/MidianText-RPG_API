@@ -11,3 +11,14 @@ class Arqueiro(MainClasses):
         self.luck = 7
         self.defe = 7
         self.mov = 3
+        self.habilidades = [
+            "Tiro Certeiro: Maior precisão em ataques à distância",
+            "Chuva de Flechas: Ataca múltiplos inimigos em área",
+            "Tiro de Precisão: Ignora parte da defesa do inimigo"
+        ]
+        # Itens iniciais da classe
+        self.starting_items = {
+            "Poção de Cura": 3,
+            "Fuga": 2,
+            "Arco Élfico": 1
+        }

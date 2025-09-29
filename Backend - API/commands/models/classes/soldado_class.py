@@ -11,3 +11,15 @@ class Soldado(MainClasses):
         self.luck = 4
         self.defe = 15
         self.mov = 2
+        self.habilidades = [
+            "Golpe Poderoso: Ataque corpo a corpo com dano aumentado",
+            "Defesa Férrea: Reduz dano recebido por um turno",
+            "Provocar: Força inimigos a atacarem você",
+            "Regeneração: Recupera HP gradualmente ao longo do combate"
+        ]
+        # Itens iniciais da classe
+        self.starting_items = {
+            "Poção de Cura": 3,
+            "Fuga": 2,
+            "Escudo de Ferro": 1
+        }
