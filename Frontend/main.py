@@ -334,57 +334,164 @@ class HomeScreen(ctk.CTkFrame):
         """Mostra diálogo para criar personagem."""
         dialog = ctk.CTkToplevel(self)
         dialog.title("Criar Novo Personagem")
-        dialog.geometry("400x300")
+        dialog.geometry("600x700")
         dialog.transient(self)
         dialog.grab_set()
         
         # Centralizar o diálogo
         dialog.update_idletasks()
-        x = (dialog.winfo_screenwidth() // 2) - (400 // 2)
-        y = (dialog.winfo_screenheight() // 2) - (300 // 2)
-        dialog.geometry(f"400x300+{x}+{y}")
+        x = (dialog.winfo_screenwidth() // 2) - (600 // 2)
+        y = (dialog.winfo_screenheight() // 2) - (700 // 2)
+        dialog.geometry(f"600x700+{x}+{y}")
+        
+        # Scroll frame para todo o conteúdo
+        scroll_frame = ctk.CTkScrollableFrame(dialog)
+        scroll_frame.pack(fill="both", expand=True, padx=20, pady=20)
         
         # Título
-        title_label = ctk.CTkLabel(dialog, text="Criar Personagem", font=ctk.CTkFont(size=20, weight="bold"))
-        title_label.pack(pady=20)
+        title_label = ctk.CTkLabel(scroll_frame, text="Criar Personagem", font=ctk.CTkFont(size=24, weight="bold"))
+        title_label.pack(pady=(0, 20))
         
         # Nome do personagem
-        name_label = ctk.CTkLabel(dialog, text="Nome do Personagem:")
+        name_label = ctk.CTkLabel(scroll_frame, text="Nome do Personagem:", font=ctk.CTkFont(size=14, weight="bold"))
         name_label.pack(pady=(10, 5))
         
-        name_entry = ctk.CTkEntry(dialog, placeholder_text="Digite o nome", width=300)
+        name_entry = ctk.CTkEntry(scroll_frame, placeholder_text="Digite o nome (2-20 caracteres)", width=400)
         name_entry.pack(pady=5)
         
         # Classe do personagem
-        class_label = ctk.CTkLabel(dialog, text="Classe:")
+        class_label = ctk.CTkLabel(scroll_frame, text="Classe:", font=ctk.CTkFont(size=14, weight="bold"))
         class_label.pack(pady=(15, 5))
         
         class_var = ctk.StringVar(value="Assassino")
-        class_menu = ctk.CTkOptionMenu(dialog, values=["Assassino", "Arqueiro", "Mago", "Soldado"], 
-                                      variable=class_var, width=300)
+        class_menu = ctk.CTkOptionMenu(scroll_frame, values=["Assassino", "Arqueiro", "Mago", "Soldado"], 
+                                      variable=class_var, width=400)
         class_menu.pack(pady=5)
         
+        # Cor do personagem
+        color_label = ctk.CTkLabel(scroll_frame, text="Cor:", font=ctk.CTkFont(size=14, weight="bold"))
+        color_label.pack(pady=(15, 5))
+        
+        color_var = ctk.StringVar(value="🔴 Vermelho")
+        color_menu = ctk.CTkOptionMenu(scroll_frame, values=["🔴 Vermelho", "🟢 Verde", "🔵 Azul", "⚫ Cinza"], 
+                                      variable=color_var, width=400)
+        color_menu.pack(pady=5)
+        
+        # Informações da cor
+        color_info_label = ctk.CTkLabel(scroll_frame, text="🔴 Vermelho > 🟢 Verde > 🔵 Azul > 🔴 Vermelho | ⚫ Cinza = Neutro\nVantagem = x1.5 dano",
+                                      font=ctk.CTkFont(size=12), text_color="gray")
+        color_info_label.pack(pady=5)
+        
+        # Frame para estatísticas
+        stats_frame = ctk.CTkFrame(scroll_frame)
+        stats_frame.pack(fill="x", pady=20)
+        
+        stats_title = ctk.CTkLabel(stats_frame, text="📊 Estatísticas da Classe", font=ctk.CTkFont(size=16, weight="bold"))
+        stats_title.pack(pady=10)
+        
+        # Container para as estatísticas (será atualizado dinamicamente)
+        stats_container = ctk.CTkFrame(stats_frame)
+        stats_container.pack(fill="x", padx=10, pady=10)
+        
+        # Função para carregar e exibir estatísticas
+        def update_stats(selected_class=None):
+            # Limpar container
+            for widget in stats_container.winfo_children():
+                widget.destroy()
+            
+            # Buscar informações das classes
+            try:
+                classes_data = api_client.get_available_classes()
+                if not classes_data or "error" in classes_data:
+                    stats_label = ctk.CTkLabel(stats_container, text="Erro ao carregar estatísticas", text_color="red")
+                    stats_label.pack()
+                    return
+                
+                current_class = selected_class or class_var.get()
+                if current_class in classes_data:
+                    stats = classes_data[current_class]['stats']
+                    
+                    # Criar grid de estatísticas
+                    stats_info = [
+                        ("❤️ HP Máximo:", stats['hp_max']),
+                        ("💪 Força:", stats['strg']),
+                        ("✨ Magia:", stats['mag']),
+                        ("⚡ Velocidade:", stats['spd']),
+                        ("🍀 Sorte:", stats['luck']),
+                        ("🛡️ Defesa:", stats['defe']),
+                        ("🚀 Movimento:", stats['mov'])
+                    ]
+                    
+                    for i, (label, value) in enumerate(stats_info):
+                        row = i // 2
+                        col = i % 2
+                        
+                        stat_frame = ctk.CTkFrame(stats_container)
+                        stat_frame.grid(row=row, column=col, padx=5, pady=2, sticky="ew")
+                        
+                        stat_text = f"{label} {value}"
+                        stat_label = ctk.CTkLabel(stat_frame, text=stat_text, font=ctk.CTkFont(size=12))
+                        stat_label.pack(pady=5)
+                    
+                    # Configurar colunas para expansão
+                    stats_container.grid_columnconfigure(0, weight=1)
+                    stats_container.grid_columnconfigure(1, weight=1)
+                    
+                    # Mostrar habilidades se disponíveis
+                    if 'habilidades' in classes_data[current_class]:
+                        hab_label = ctk.CTkLabel(stats_container, text="🎯 Habilidades:", font=ctk.CTkFont(size=12, weight="bold"))
+                        hab_label.grid(row=len(stats_info)//2 + 1, column=0, columnspan=2, pady=(10, 5))
+                        
+                        for j, habilidade in enumerate(classes_data[current_class]['habilidades']):
+                            hab_text = ctk.CTkLabel(stats_container, text=f"• {habilidade}", font=ctk.CTkFont(size=10), 
+                                                  text_color="gray", wraplength=500)
+                            hab_text.grid(row=len(stats_info)//2 + 2 + j, column=0, columnspan=2, sticky="w", padx=10)
+                            
+            except Exception as e:
+                error_label = ctk.CTkLabel(stats_container, text=f"Erro: {str(e)}", text_color="red")
+                error_label.pack()
+        
+        # Atualizar estatísticas quando a classe mudar
+        class_menu.configure(command=update_stats)
+        
+        # Carregar estatísticas iniciais
+        update_stats()
+        
         # Status label
-        status_label = ctk.CTkLabel(dialog, text="")
+        status_label = ctk.CTkLabel(scroll_frame, text="", font=ctk.CTkFont(size=12))
         status_label.pack(pady=10)
         
         # Botões
-        button_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        button_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
         button_frame.pack(pady=20)
         
         def create_character():
             name = name_entry.get().strip()
             character_class = class_var.get()
+            color_display = color_var.get()
+            
+            # Extrair cor real do display
+            color_map = {
+                "🔴 Vermelho": "vermelho",
+                "🟢 Verde": "verde", 
+                "🔵 Azul": "azul",
+                "⚫ Cinza": "cinza"
+            }
+            color = color_map.get(color_display, "cinza")
             
             if not name:
                 status_label.configure(text="Por favor, digite um nome para o personagem.", text_color="red")
+                return
+                
+            if len(name) < 2 or len(name) > 20:
+                status_label.configure(text="O nome deve ter entre 2 e 20 caracteres.", text_color="red")
                 return
             
             status_label.configure(text="Criando personagem...", text_color="blue")
             dialog.update()
             
-            # Criar personagem usando a API
-            result = api_client.create_character(self.controller.access_token, name, character_class)
+            # Criar personagem usando a API com cor
+            result = api_client.create_character(self.controller.access_token, name, character_class, color)
             
             if result and not result.get('error'):
                 status_label.configure(text="✅ Personagem criado com sucesso!", text_color="green")
@@ -396,67 +503,197 @@ class HomeScreen(ctk.CTkFrame):
                 error_msg = result.get('error', 'Erro desconhecido') if result else 'Erro na comunicação'
                 status_label.configure(text=f"Erro: {error_msg}", text_color="red")
         
-        create_btn = ctk.CTkButton(button_frame, text="Criar", command=create_character)
+        create_btn = ctk.CTkButton(button_frame, text="🎯 Criar Personagem", command=create_character, 
+                                  font=ctk.CTkFont(size=14, weight="bold"))
         create_btn.pack(side="left", padx=10)
         
-        cancel_btn = ctk.CTkButton(button_frame, text="Cancelar", command=dialog.destroy)
+        cancel_btn = ctk.CTkButton(button_frame, text="❌ Cancelar", command=dialog.destroy)
         cancel_btn.pack(side="left", padx=10)
         
         name_entry.focus()
     
     def show_character_details(self, character):
-        """Mostra detalhes do personagem."""
+        """Mostra detalhes completos do personagem."""
         dialog = ctk.CTkToplevel(self)
         dialog.title(f"Detalhes - {character.get('name', 'Personagem')}")
-        dialog.geometry("450x500")
+        dialog.geometry("650x800")
         dialog.transient(self)
         dialog.grab_set()
         
         # Centralizar o diálogo
         dialog.update_idletasks()
-        x = (dialog.winfo_screenwidth() // 2) - (450 // 2)
-        y = (dialog.winfo_screenheight() // 2) - (500 // 2)
-        dialog.geometry(f"450x500+{x}+{y}")
+        x = (dialog.winfo_screenwidth() // 2) - (650 // 2)
+        y = (dialog.winfo_screenheight() // 2) - (800 // 2)
+        dialog.geometry(f"650x800+{x}+{y}")
         
         # Scroll frame para os detalhes
         scroll_frame = ctk.CTkScrollableFrame(dialog)
         scroll_frame.pack(fill="both", expand=True, padx=20, pady=20)
         
-        # Título
+        # Título com nome e classe
         name = character.get('name', 'Nome não encontrado')
         char_class = character.get('character_class', 'Classe não encontrada')
-        title_label = ctk.CTkLabel(scroll_frame, text=f"{name} - {char_class}", 
-                                  font=ctk.CTkFont(size=18, weight="bold"))
-        title_label.pack(pady=(0, 20))
+        title_label = ctk.CTkLabel(scroll_frame, text=f"⚔️ {name}", 
+                                  font=ctk.CTkFont(size=24, weight="bold"))
+        title_label.pack(pady=(0, 5))
         
-        # Informações do personagem
-        info_frame = ctk.CTkFrame(scroll_frame)
-        info_frame.pack(fill="x", pady=10)
+        class_label = ctk.CTkLabel(scroll_frame, text=f"🎭 {char_class}", 
+                                  font=ctk.CTkFont(size=16), text_color="gray")
+        class_label.pack(pady=(0, 20))
         
-        details = [
-            ("ID", character.get('id', 'N/A')[:8] + '...' if character.get('id') else 'N/A'),
-            ("Nível", character.get('level', 1)),
-            ("HP", f"{character.get('hp_tmp', 0)}/{character.get('hp_max', 0)}"),
-            ("Força", character.get('strg', 0)),
-            ("Magia", character.get('mag', 0)),
-            ("Velocidade", character.get('spd', 0)),
-            ("Sorte", character.get('luck', 0)),
-            ("Defesa", character.get('defe', 0)),
-            ("Movimento", character.get('mov', 0)),
+        # Informações básicas
+        basic_frame = ctk.CTkFrame(scroll_frame)
+        basic_frame.pack(fill="x", pady=10)
+        
+        basic_title = ctk.CTkLabel(basic_frame, text="📋 Informações Básicas", 
+                                  font=ctk.CTkFont(size=16, weight="bold"))
+        basic_title.pack(pady=10)
+        
+        # Extrair cor e emoji
+        color = character.get('color', 'cinza')
+        color_emojis = {
+            'vermelho': '🔴',
+            'verde': '🟢', 
+            'azul': '🔵',
+            'cinza': '⚫'
+        }
+        color_emoji = color_emojis.get(color, '⚫')
+        
+        basic_details = [
+            ("🆔 ID", character.get('id', 'N/A')[:12] + '...' if character.get('id') else 'N/A'),
+            ("🎚️ Nível", character.get('level', 1)),
+            ("🎨 Cor", f"{color_emoji} {color.title()}"),
         ]
         
-        for i, (label, value) in enumerate(details):
-            detail_frame = ctk.CTkFrame(info_frame, fg_color="transparent")
+        for label, value in basic_details:
+            detail_frame = ctk.CTkFrame(basic_frame, fg_color="transparent")
             detail_frame.pack(fill="x", pady=2)
             
-            label_widget = ctk.CTkLabel(detail_frame, text=f"{label}:", width=100, anchor="w")
+            label_widget = ctk.CTkLabel(detail_frame, text=f"{label}:", width=120, anchor="w")
             label_widget.pack(side="left", padx=(10, 5))
             
             value_widget = ctk.CTkLabel(detail_frame, text=str(value), anchor="w")
             value_widget.pack(side="left")
         
+        # Estatísticas
+        stats_frame = ctk.CTkFrame(scroll_frame)
+        stats_frame.pack(fill="x", pady=10)
+        
+        stats_title = ctk.CTkLabel(stats_frame, text="📊 Estatísticas", 
+                                  font=ctk.CTkFont(size=16, weight="bold"))
+        stats_title.pack(pady=10)
+        
+        # Verificar se existem status detalhados
+        status_data = character.get('status', {})
+        if status_data:
+            # Usar dados do status (nova estrutura)
+            stats_details = [
+                ("❤️ HP Máximo", status_data.get('hp_max', 0)),
+                ("💗 HP Atual", status_data.get('hp_atual', status_data.get('hp_max', 0))),
+                ("💪 Força", status_data.get('strg', 0)),
+                ("✨ Magia", status_data.get('mag', 0)),
+                ("⚡ Velocidade", status_data.get('spd', 0)),
+                ("🍀 Sorte", status_data.get('luck', 0)),
+                ("🛡️ Defesa", status_data.get('defe', 0)),
+                ("🚀 Movimento", status_data.get('mov', 0)),
+            ]
+        else:
+            # Usar dados antigos (compatibilidade)
+            stats_details = [
+                ("❤️ HP Máximo", character.get('hp_max', 0)),
+                ("💗 HP Atual", character.get('hp_tmp', character.get('hp_max', 0))),
+                ("💪 Força", character.get('strg', 0)),
+                ("✨ Magia", character.get('mag', 0)),
+                ("⚡ Velocidade", character.get('spd', 0)),
+                ("🍀 Sorte", character.get('luck', 0)),
+                ("🛡️ Defesa", character.get('defe', 0)),
+                ("🚀 Movimento", character.get('mov', 0)),
+            ]
+        
+        # Criar grid 2x4 para estatísticas
+        stats_container = ctk.CTkFrame(stats_frame)
+        stats_container.pack(fill="x", padx=10, pady=10)
+        
+        for i, (label, value) in enumerate(stats_details):
+            row = i // 2
+            col = i % 2
+            
+            stat_frame = ctk.CTkFrame(stats_container)
+            stat_frame.grid(row=row, column=col, padx=5, pady=3, sticky="ew")
+            
+            stat_text = f"{label}: {value}"
+            stat_label = ctk.CTkLabel(stat_frame, text=stat_text, font=ctk.CTkFont(size=12))
+            stat_label.pack(pady=5)
+        
+        # Configurar colunas para expansão
+        stats_container.grid_columnconfigure(0, weight=1)
+        stats_container.grid_columnconfigure(1, weight=1)
+        
+        # Habilidades
+        habilidades = character.get('habilidades', [])
+        if habilidades:
+            hab_frame = ctk.CTkFrame(scroll_frame)
+            hab_frame.pack(fill="x", pady=10)
+            
+            hab_title = ctk.CTkLabel(hab_frame, text="🎯 Habilidades", 
+                                    font=ctk.CTkFont(size=16, weight="bold"))
+            hab_title.pack(pady=10)
+            
+            for habilidade in habilidades:
+                hab_item = ctk.CTkLabel(hab_frame, text=f"• {habilidade}", 
+                                       font=ctk.CTkFont(size=12), anchor="w", 
+                                       wraplength=580, justify="left")
+                hab_item.pack(fill="x", padx=15, pady=2, anchor="w")
+        
+        # Itens
+        itens = character.get('itens', {})
+        if itens:
+            itens_frame = ctk.CTkFrame(scroll_frame)
+            itens_frame.pack(fill="x", pady=10)
+            
+            itens_title = ctk.CTkLabel(itens_frame, text="🎒 Inventário", 
+                                      font=ctk.CTkFont(size=16, weight="bold"))
+            itens_title.pack(pady=10)
+            
+            # Mapear emojis para tipos de itens conhecidos
+            item_emojis = {
+                'Poção de Cura': '🧪',
+                'Fuga': '📜',
+                'Adagas Gêmeas': '🗡️',
+                'Arco Élfico': '🏹',
+                'Cajado Arcano': '🔮',
+                'Escudo de Ferro': '🛡️'
+            }
+            
+            for item_name, quantity in itens.items():
+                emoji = item_emojis.get(item_name, '📦')
+                item_text = f"{emoji} {item_name}: {quantity}x"
+                
+                item_label = ctk.CTkLabel(itens_frame, text=item_text, 
+                                         font=ctk.CTkFont(size=12), anchor="w")
+                item_label.pack(fill="x", padx=15, pady=2, anchor="w")
+        
+        # Informações adicionais
+        if character.get('created_at'):
+            created_at = character.get('created_at', '')
+            # Tentar formatar a data se possível
+            try:
+                from datetime import datetime
+                dt = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                formatted_date = dt.strftime('%d/%m/%Y às %H:%M')
+                
+                date_frame = ctk.CTkFrame(scroll_frame)
+                date_frame.pack(fill="x", pady=10)
+                
+                date_label = ctk.CTkLabel(date_frame, text=f"📅 Criado em: {formatted_date}", 
+                                         font=ctk.CTkFont(size=10), text_color="gray")
+                date_label.pack(pady=5)
+            except:
+                pass  # Se não conseguir formatar, não mostra
+        
         # Botão fechar
-        close_btn = ctk.CTkButton(scroll_frame, text="Fechar", command=dialog.destroy)
+        close_btn = ctk.CTkButton(scroll_frame, text="❌ Fechar", command=dialog.destroy,
+                                 font=ctk.CTkFont(size=14))
         close_btn.pack(pady=20)
 
     def logout(self):

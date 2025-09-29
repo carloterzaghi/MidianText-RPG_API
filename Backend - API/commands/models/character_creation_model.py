@@ -37,7 +37,7 @@ class CharacterResponse(BaseModel):
     character_class: str
     level: int
     status: dict
-    itens: list
+    itens: dict  # Mudado de list para dict
     habilidades: list
     hp_max: int
     hp_tmp: int
