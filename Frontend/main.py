@@ -11,6 +11,7 @@ class App(ctk.CTk):
         # store user data
         self.access_token = None
         self.current_user = None
+        self.selected_character = None  # Personagem selecionado para jogar
 
         # create a container for screens
         container = ctk.CTkFrame(self)
@@ -20,7 +21,7 @@ class App(ctk.CTk):
 
         self.screens = {}
 
-        for F in (LoginScreen, RegisterScreen, HomeScreen):
+        for F in (LoginScreen, RegisterScreen, HomeScreen, GameScreen):
             page_name = F.__name__
             frame = F(parent=container, controller=self)
             self.screens[page_name] = frame
@@ -32,6 +33,8 @@ class App(ctk.CTk):
         '''Show a screen for the given page name'''
         screen = self.screens[page_name]
         if page_name == "HomeScreen":
+            screen.on_enter()
+        elif page_name == "GameScreen":
             screen.on_enter()
         screen.tkraise()
 
@@ -316,6 +319,21 @@ class HomeScreen(ctk.CTkFrame):
                 # Frame para botões à direita
                 buttons_frame = ctk.CTkFrame(char_frame, fg_color="transparent")
                 buttons_frame.pack(side="right", padx=15, pady=10)
+
+                # Botão jogar
+                def make_play_cmd(char):
+                    return lambda: self.start_game(char)
+                
+                play_btn = ctk.CTkButton(
+                    buttons_frame,
+                    text="🎮 Jogar",
+                    width=90,
+                    height=30,
+                    fg_color="#28a745",
+                    hover_color="#1e7e34",
+                    command=make_play_cmd(personagem)
+                )
+                play_btn.pack(side="right", padx=(0, 5))
 
                 # Botão deletar
                 def make_delete_cmd(char):
@@ -962,6 +980,11 @@ class HomeScreen(ctk.CTkFrame):
                               font=ctk.CTkFont(size=14))
         ok_btn.pack(pady=15)
 
+    def start_game(self, character):
+        """Inicia o jogo com o personagem selecionado"""
+        self.controller.selected_character = character
+        self.controller.show_screen("GameScreen")
+
     def logout(self):
         self.controller.access_token = None
         self.controller.current_user = None
@@ -969,6 +992,348 @@ class HomeScreen(ctk.CTkFrame):
         # Clear the list
         for widget in self.personagens_list.winfo_children():
             widget.destroy()
+
+
+class GameScreen(ctk.CTkFrame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+
+        self.grid_rowconfigure(1, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+
+        # Header com informações do personagem
+        self.header_frame = ctk.CTkFrame(self, height=120, fg_color="#2b2b2b")
+        self.header_frame.grid(row=0, column=0, sticky="ew", padx=20, pady=(20, 10))
+        self.header_frame.grid_propagate(False)
+        self.header_frame.grid_columnconfigure(1, weight=1)
+
+        # Informações do personagem no header
+        self.character_info_label = ctk.CTkLabel(
+            self.header_frame, 
+            text="", 
+            font=ctk.CTkFont(size=18, weight="bold"),
+            wraplength=800
+        )
+        self.character_info_label.grid(row=0, column=0, padx=20, pady=20, sticky="w")
+
+        # Botão voltar
+        back_button = ctk.CTkButton(
+            self.header_frame,
+            text="← Voltar",
+            command=lambda: controller.show_screen("HomeScreen"),
+            width=100,
+            fg_color="#6c757d",
+            hover_color="#5a6268"
+        )
+        back_button.grid(row=0, column=2, padx=20, pady=20, sticky="e")
+
+        # Menu principal do jogo
+        main_frame = ctk.CTkFrame(self)
+        main_frame.grid(row=1, column=0, sticky="nsew", padx=20, pady=(0, 20))
+        main_frame.grid_rowconfigure(1, weight=1)
+        main_frame.grid_columnconfigure((0, 1, 2), weight=1)
+
+        # Título
+        title_label = ctk.CTkLabel(
+            main_frame, 
+            text="MidianText RPG", 
+            font=ctk.CTkFont(size=32, weight="bold")
+        )
+        title_label.grid(row=0, column=0, columnspan=3, pady=(30, 50))
+
+        # Botões do menu
+        button_width = 200
+        button_height = 80
+
+        # Botão Loja
+        shop_button = ctk.CTkButton(
+            main_frame,
+            text="🛍️ Loja",
+            command=self.open_shop,
+            width=button_width,
+            height=button_height,
+            font=ctk.CTkFont(size=18),
+            fg_color="#17a2b8",
+            hover_color="#138496"
+        )
+        shop_button.grid(row=1, column=0, padx=20, pady=20)
+
+        # Botão Missão
+        mission_button = ctk.CTkButton(
+            main_frame,
+            text="⚔️ Missão",
+            command=self.open_mission,
+            width=button_width,
+            height=button_height,
+            font=ctk.CTkFont(size=18),
+            fg_color="#fd7e14",
+            hover_color="#e96602"
+        )
+        mission_button.grid(row=1, column=1, padx=20, pady=20)
+
+        # Botão Personagem
+        character_button = ctk.CTkButton(
+            main_frame,
+            text="👤 Personagem",
+            command=self.open_character,
+            width=button_width,
+            height=button_height,
+            font=ctk.CTkFont(size=18),
+            fg_color="#6f42c1",
+            hover_color="#5a32a3"
+        )
+        character_button.grid(row=1, column=2, padx=20, pady=20)
+
+    def on_enter(self):
+        """Atualiza as informações quando entra na tela do jogo"""
+        if self.controller.selected_character:
+            character = self.controller.selected_character
+            name = character.get('name', 'N/A')
+            char_class = character.get('character_class', 'N/A')
+            level = character.get('level', 'N/A')
+            
+            # Verificar se existem status detalhados
+            status_data = character.get('status', {})
+            if status_data:
+                hp_atual = status_data.get('hp_atual', status_data.get('hp_max', 'N/A'))
+                hp_max = status_data.get('hp_max', 'N/A')
+                info_text = f"{name} | {char_class} | Nível: {level} | HP: {hp_atual}/{hp_max}"
+            else:
+                info_text = f"{name} | {char_class} | Nível: {level}"
+            self.character_info_label.configure(text=info_text)
+
+    def open_shop(self):
+        """Abre a tela da loja"""
+        shop_window = ctk.CTkToplevel(self)
+        shop_window.title("Loja")
+        shop_window.geometry("600x400")
+        shop_window.transient(self)
+        shop_window.grab_set()
+
+        # Centralizar a janela
+        shop_window.update_idletasks()
+        x = (shop_window.winfo_screenwidth() // 2) - (600 // 2)
+        y = (shop_window.winfo_screenheight() // 2) - (400 // 2)
+        shop_window.geometry(f"600x400+{x}+{y}")
+
+        label = ctk.CTkLabel(shop_window, text="🛍️ Loja", font=ctk.CTkFont(size=24, weight="bold"))
+        label.pack(pady=20)
+
+        info_label = ctk.CTkLabel(shop_window, text="Em desenvolvimento...", font=ctk.CTkFont(size=16))
+        info_label.pack(pady=20)
+
+        close_button = ctk.CTkButton(shop_window, text="Fechar", command=shop_window.destroy)
+        close_button.pack(pady=20)
+
+    def open_mission(self):
+        """Abre a tela de missões"""
+        mission_window = ctk.CTkToplevel(self)
+        mission_window.title("Missões")
+        mission_window.geometry("600x400")
+        mission_window.transient(self)
+        mission_window.grab_set()
+
+        # Centralizar a janela
+        mission_window.update_idletasks()
+        x = (mission_window.winfo_screenwidth() // 2) - (600 // 2)
+        y = (mission_window.winfo_screenheight() // 2) - (400 // 2)
+        mission_window.geometry(f"600x400+{x}+{y}")
+
+        label = ctk.CTkLabel(mission_window, text="⚔️ Missões", font=ctk.CTkFont(size=24, weight="bold"))
+        label.pack(pady=20)
+
+        info_label = ctk.CTkLabel(mission_window, text="Em desenvolvimento...", font=ctk.CTkFont(size=16))
+        info_label.pack(pady=20)
+
+        close_button = ctk.CTkButton(mission_window, text="Fechar", command=mission_window.destroy)
+        close_button.pack(pady=20)
+
+    def open_character(self):
+        """Abre a tela de informações do personagem"""
+        character_window = ctk.CTkToplevel(self)
+        character_window.title("Personagem")
+        character_window.geometry("600x700")
+        character_window.transient(self)
+        character_window.grab_set()
+
+        # Centralizar a janela
+        character_window.update_idletasks()
+        x = (character_window.winfo_screenwidth() // 2) - (600 // 2)
+        y = (character_window.winfo_screenheight() // 2) - (700 // 2)
+        character_window.geometry(f"600x700+{x}+{y}")
+
+        # Frame principal com scroll
+        main_frame = ctk.CTkFrame(character_window)
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Scroll frame
+        scroll_frame = ctk.CTkScrollableFrame(main_frame, width=550, height=620)
+        scroll_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        if self.controller.selected_character:
+            character = self.controller.selected_character
+            
+            title_label = ctk.CTkLabel(scroll_frame, text="👤 Personagem", font=ctk.CTkFont(size=24, weight="bold"))
+            title_label.pack(pady=(10, 20))
+
+            # Informações básicas
+            name = character.get('name', 'N/A')
+            char_class = character.get('character_class', 'N/A')
+            level = character.get('level', 'N/A')
+
+            basic_frame = ctk.CTkFrame(scroll_frame)
+            basic_frame.pack(fill="x", pady=10)
+            
+            basic_title = ctk.CTkLabel(basic_frame, text="📋 Informações Básicas", 
+                                      font=ctk.CTkFont(size=16, weight="bold"))
+            basic_title.pack(pady=10)
+
+            basic_info = f"""
+👤 Nome: {name}
+🎭 Classe: {char_class}
+🎚️ Nível: {level}
+"""
+
+            basic_label = ctk.CTkLabel(basic_frame, text=basic_info, justify="left", font=ctk.CTkFont(size=14))
+            basic_label.pack(pady=(0, 10))
+
+            # Status do personagem
+            status_data = character.get('status', {})
+            if status_data:
+                stats_frame = ctk.CTkFrame(scroll_frame)
+                stats_frame.pack(fill="x", pady=10)
+                
+                stats_title = ctk.CTkLabel(stats_frame, text="📊 Status", 
+                                          font=ctk.CTkFont(size=16, weight="bold"))
+                stats_title.pack(pady=10)
+
+                detailed_info = f"""
+❤️ HP Máximo: {status_data.get('hp_max', 0)}
+💗 HP Atual: {status_data.get('hp_atual', status_data.get('hp_max', 0))}
+💪 Força: {status_data.get('strg', 0)}
+✨ Magia: {status_data.get('mag', 0)}
+⚡ Velocidade: {status_data.get('spd', 0)}
+🍀 Sorte: {status_data.get('luck', 0)}
+🛡️ Defesa: {status_data.get('defe', 0)}
+🚀 Movimento: {status_data.get('mov', 0)}
+"""
+
+                stats_label = ctk.CTkLabel(stats_frame, text=detailed_info, justify="left", font=ctk.CTkFont(size=14))
+                stats_label.pack(pady=(0, 10))
+
+            # Habilidades do personagem
+            # Verificar diferentes estruturas de habilidades
+            skills_data = character.get('skills', {})
+            habilidades_data = character.get('habilidades', [])
+            abilities_data = character.get('abilities', {})
+            
+            # Combinar todas as possíveis estruturas de habilidades
+            all_skills = {}
+            
+            # Se for um dicionário (skills), usar diretamente
+            if isinstance(skills_data, dict) and skills_data:
+                all_skills.update(skills_data)
+            
+            # Se for um dicionário (abilities), usar diretamente
+            if isinstance(abilities_data, dict) and abilities_data:
+                all_skills.update(abilities_data)
+            
+            # Se for uma lista (habilidades), converter para dicionário
+            if isinstance(habilidades_data, list) and habilidades_data:
+                for i, skill in enumerate(habilidades_data):
+                    if isinstance(skill, str):
+                        all_skills[skill] = 1  # Nível padrão
+                    elif isinstance(skill, dict):
+                        # Se cada habilidade for um dicionário com nome e nível
+                        skill_name = skill.get('name', skill.get('nome', f'Habilidade {i+1}'))
+                        skill_level = skill.get('level', skill.get('nivel', 1))
+                        all_skills[skill_name] = skill_level
+            
+            if all_skills:
+                skills_frame = ctk.CTkFrame(scroll_frame)
+                skills_frame.pack(fill="x", pady=10)
+                
+                skills_title = ctk.CTkLabel(skills_frame, text="⚔️ Habilidades", 
+                                           font=ctk.CTkFont(size=16, weight="bold"))
+                skills_title.pack(pady=10)
+
+                # Mapear emojis para tipos de habilidades
+                skill_emojis = {
+                    'Ataque Duplo': '⚔️',
+                    'Tiro Certeiro': '🎯',
+                    'Bola de Fogo': '🔥',
+                    'Cura': '✨',
+                    'Defesa': '🛡️',
+                    'Velocidade': '💨',
+                    'Furtividade': '👤',
+                    'Golpe Crítico': '💥',
+                    'Ataque Básico': '🗡️',
+                    'Magia Básica': '🔮',
+                    'Cura Menor': '💚',
+                    'Esquiva': '🏃',
+                    'Bloqueio': '🛡️',
+                    'Regeneração': '💖',
+                    'Concentração': '🧘'
+                }
+
+                for skill_name, skill_level in all_skills.items():
+                    emoji = skill_emojis.get(skill_name, '🎲')
+                    skill_text = f"{emoji} {skill_name}: Nível {skill_level}"
+                    
+                    skill_label = ctk.CTkLabel(skills_frame, text=skill_text, 
+                                              font=ctk.CTkFont(size=12), anchor="w")
+                    skill_label.pack(fill="x", padx=15, pady=2, anchor="w")
+            else:
+                # Se não houver habilidades, mostrar mensagem informativa
+                skills_frame = ctk.CTkFrame(scroll_frame)
+                skills_frame.pack(fill="x", pady=10)
+                
+                skills_title = ctk.CTkLabel(skills_frame, text="⚔️ Habilidades", 
+                                           font=ctk.CTkFont(size=16, weight="bold"))
+                skills_title.pack(pady=10)
+                
+                no_skills_label = ctk.CTkLabel(skills_frame, text="📝 Nenhuma habilidade disponível", 
+                                              font=ctk.CTkFont(size=12), text_color="gray")
+                no_skills_label.pack(pady=10)
+            
+            # Inventário do personagem
+            items_data = character.get('itens', {})
+            if items_data and any(quantity > 0 for quantity in items_data.values()):
+                items_frame = ctk.CTkFrame(scroll_frame)
+                items_frame.pack(fill="x", pady=10)
+                
+                items_title = ctk.CTkLabel(items_frame, text="🎒 Inventário", 
+                                          font=ctk.CTkFont(size=16, weight="bold"))
+                items_title.pack(pady=10)
+
+                # Mapear emojis para tipos de itens
+                item_emojis = {
+                    'Poção de Cura': '🧪',
+                    'Fuga': '📜',
+                    'Adagas Gêmeas': '🗡️',
+                    'Arco Élfico': '🏹',
+                    'Cajado Arcano': '🔮',
+                    'Escudo de Ferro': '🛡️',
+                    'Espada': '⚔️',
+                    'Armadura': '👕',
+                    'Anel': '💍',
+                    'Amuleto': '🔮',
+                    'Poção de Mana': '💙',
+                    'Pergaminho': '📃'
+                }
+
+                for item_name, quantity in items_data.items():
+                    if quantity > 0:  # Só mostrar itens que o personagem possui
+                        emoji = item_emojis.get(item_name, '📦')
+                        item_text = f"{emoji} {item_name}: {quantity}x"
+                        
+                        item_label = ctk.CTkLabel(items_frame, text=item_text, 
+                                                 font=ctk.CTkFont(size=12), anchor="w")
+                        item_label.pack(fill="x", padx=15, pady=2, anchor="w")
+
+        close_button = ctk.CTkButton(scroll_frame, text="Fechar", command=character_window.destroy)
+        close_button.pack(pady=20)
 
 
 if __name__ == "__main__":
