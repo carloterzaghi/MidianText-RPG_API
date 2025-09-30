@@ -8,6 +8,7 @@ from commands.models.classes.arqueiro_class import Arqueiro
 from commands.models.classes.mage_class import Mago
 from commands.models.classes.soldado_class import Soldado
 from commands.models.items_table import ItemTable
+from google.cloud import firestore
 
 router = APIRouter()
 
@@ -81,9 +82,9 @@ def criar_personagem(character_data: CharacterCreationRequest, authorization: st
         if personagem.get("name", "").lower() == character_data.name.lower():
             raise HTTPException(status_code=400, detail="Já existe um personagem com este nome")
     
-    # Verifica limite de personagens (máximo 5 por usuário)
-    if len(personagens_existentes) >= 5:
-        raise HTTPException(status_code=400, detail="Limite máximo de 5 personagens atingido")
+    # Verifica limite de personagens (máximo 3 por usuário)
+    if len(personagens_existentes) >= 3:
+        raise HTTPException(status_code=400, detail="Limite máximo de 3 personagens atingido")
     
     # Cria a instância da classe do personagem
     class_instance = CLASS_MAP[character_data.character_class]()
@@ -120,6 +121,61 @@ def criar_personagem(character_data: CharacterCreationRequest, authorization: st
         raise HTTPException(status_code=500, detail=f"Erro ao salvar personagem: {str(e)}")
     
     return CharacterResponse(**novo_personagem.to_dict_full())
+
+@router.delete("/personagens/{character_name}")
+def deletar_personagem(character_name: str, authorization: str = Header(None)):
+    """
+    Deleta um personagem específico do usuário autenticado.
+    """
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Não autorizado")
+
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(status_code=401, detail="Formato de token inválido")
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Formato de token inválido")
+
+    user_id = verify_key(token)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Token inválido ou expirado")
+
+    # Busca os personagens existentes
+    personagens_doc = personagens_collection.document(user_id).get()
+    if not personagens_doc.exists:
+        raise HTTPException(status_code=404, detail="Nenhum personagem encontrado")
+    
+    personagens_existentes = personagens_doc.to_dict().get("personagens", [])
+    
+    # Procura o personagem para deletar
+    personagem_encontrado = False
+    personagens_atualizados = []
+    
+    for personagem in personagens_existentes:
+        if personagem.get("name", "").lower() != character_name.lower():
+            personagens_atualizados.append(personagem)
+        else:
+            personagem_encontrado = True
+    
+    if not personagem_encontrado:
+        raise HTTPException(status_code=404, detail="Personagem não encontrado")
+    
+    try:
+        # Atualizar a lista de personagens (estrutura antiga)
+        personagens_collection.document(user_id).update({
+            "personagens": personagens_atualizados
+        })
+        
+        # Remover da nova estrutura também (nome como chave)
+        personagens_collection.document(user_id).update({
+            character_name: firestore.DELETE_FIELD
+        })
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao deletar personagem: {str(e)}")
+    
+    return {"message": f"Personagem '{character_name}' deletado com sucesso"}
 
 @router.get("/personagens/classes")
 def get_classes_disponiveis():

@@ -84,3 +84,17 @@ def get_available_colors():
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")
         return {"error": str(e)}
+
+def delete_character(token, character_name):
+    """
+    Deletes a character for the authenticated user.
+    """
+    url = f"{BASE_URL}/personagens/{character_name}"
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        response = requests.delete(url, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return {"error": str(e)}

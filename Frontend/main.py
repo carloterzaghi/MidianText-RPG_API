@@ -253,12 +253,12 @@ class HomeScreen(ctk.CTkFrame):
         logout_button.grid(row=0, column=1, sticky="e")
 
         # Main title
-        title_label = ctk.CTkLabel(self, text="Seus Personagens", font=ctk.CTkFont(size=32, weight="bold"))
-        title_label.grid(row=1, column=0, padx=20, pady=20)
+        self.title_label = ctk.CTkLabel(self, text="Seus Personagens", font=ctk.CTkFont(size=32, weight="bold"))
+        self.title_label.grid(row=1, column=0, padx=20, pady=20)
 
         # Botão para criar personagem
-        create_button = ctk.CTkButton(self, text="⚔️ Criar Novo Personagem", command=self.show_create_character_dialog)
-        create_button.grid(row=1, column=0, padx=20, pady=(0, 10), sticky="e")
+        self.create_button = ctk.CTkButton(self, text="⚔️ Criar Novo Personagem", command=self.check_and_create_character)
+        self.create_button.grid(row=1, column=0, padx=20, pady=(0, 10), sticky="e")
 
         # Personagens list
         self.personagens_list = ctk.CTkScrollableFrame(self, label_text="Personagens")
@@ -289,6 +289,16 @@ class HomeScreen(ctk.CTkFrame):
         else:
             personagens = []
 
+        # Atualizar título com contador
+        personagens_count = len(personagens) if personagens else 0
+        self.title_label.configure(text=f"Seus Personagens ({personagens_count}/3)")
+        
+        # Atualizar estado do botão
+        if personagens_count >= 3:
+            self.create_button.configure(text="⚠️ Limite Atingido (3/3)", state="disabled")
+        else:
+            self.create_button.configure(text="⚔️ Criar Novo Personagem", state="normal")
+
         if personagens and len(personagens) > 0:
             for i, personagem in enumerate(personagens):
                 nome = personagem.get('name', personagem.get('nome', 'Nome não encontrado'))
@@ -297,22 +307,43 @@ class HomeScreen(ctk.CTkFrame):
                 # Frame for each character
                 char_frame = ctk.CTkFrame(self.personagens_list, fg_color=("#f0f0f0", "#2e2e2e"), corner_radius=10)
                 char_frame.pack(fill="x", padx=10, pady=5)
-                
-                char_frame.grid_columnconfigure(0, weight=1)
 
-                # Character name and class
+                # Nome do personagem à esquerda
                 info_text = f"{nome} - {classe}"
-                name_label = ctk.CTkLabel(char_frame, text=info_text, font=ctk.CTkFont(size=16))
-                name_label.grid(row=0, column=0, padx=15, pady=10, sticky="w")
+                name_label = ctk.CTkLabel(char_frame, text=info_text, font=ctk.CTkFont(size=16), anchor="w")
+                name_label.pack(side="left", padx=15, pady=10, expand=True, fill="x")
 
-                # "Ver detalhes" button
-                details_button = ctk.CTkButton(
-                    char_frame, 
-                    text="Ver detalhes", 
-                    width=120,
-                    command=lambda p=personagem: self.show_character_details(p)
+                # Frame para botões à direita
+                buttons_frame = ctk.CTkFrame(char_frame, fg_color="transparent")
+                buttons_frame.pack(side="right", padx=15, pady=10)
+
+                # Botão deletar
+                def make_delete_cmd(char):
+                    return lambda: self.confirm_delete_character(char)
+                
+                delete_btn = ctk.CTkButton(
+                    buttons_frame,
+                    text="🗑️ Deletar",
+                    width=90,
+                    height=30,
+                    fg_color="#d32f2f",
+                    hover_color="#b71c1c",
+                    command=make_delete_cmd(personagem)
                 )
-                details_button.grid(row=0, column=1, padx=15, pady=10, sticky="e")
+                delete_btn.pack(side="right", padx=(5, 0))
+
+                # Botão detalhes
+                def make_details_cmd(char):
+                    return lambda: self.show_character_details(char)
+                
+                details_btn = ctk.CTkButton(
+                    buttons_frame,
+                    text="🧾 Detalhes", 
+                    width=90,
+                    height=30,
+                    command=make_details_cmd(personagem)
+                )
+                details_btn.pack(side="right", padx=(0, 5))
         else:
             # Nenhum personagem encontrado
             no_chars_frame = ctk.CTkFrame(self.personagens_list, fg_color=("#f9f9f9", "#1e1e1e"), corner_radius=10)
@@ -322,7 +353,7 @@ class HomeScreen(ctk.CTkFrame):
                                        font=ctk.CTkFont(size=18, weight="bold"))
             welcome_label.pack(pady=(20, 10))
             
-            info_label = ctk.CTkLabel(no_chars_frame, text="Você ainda não tem personagens.\nClique em 'Criar Novo Personagem' para começar sua aventura!")
+            info_label = ctk.CTkLabel(no_chars_frame, text="Você ainda não tem personagens.\nClique em 'Criar Novo Personagem' para começar sua aventura!\n\n📝 Limite: Você pode criar até 3 personagens.")
             info_label.pack(pady=(0, 20))
             
             # Se há erro na resposta
@@ -330,6 +361,74 @@ class HomeScreen(ctk.CTkFrame):
                 error_label = ctk.CTkLabel(self.personagens_list, text=f"Erro: {response['error']}", text_color="red")
                 error_label.pack(padx=10, pady=5)
     
+    def check_and_create_character(self):
+        """Verifica o limite de personagens antes de abrir o diálogo de criação."""
+        token = self.controller.access_token
+        if not token:
+            self.controller.show_screen('LoginScreen')
+            return
+        
+        # Buscar personagens atuais
+        response = api_client.get_personagens(token)
+        
+        if response and not isinstance(response, dict):
+            # Resposta válida com lista de personagens
+            personagens_count = len(response)
+            
+            if personagens_count >= 3:
+                # Mostrar aviso de limite atingido
+                self.show_limit_reached_dialog()
+                return
+            
+            # Se ainda pode criar, mostrar o diálogo
+            self.show_create_character_dialog()
+        else:
+            # Se não conseguiu buscar ou lista vazia, permitir criação
+            self.show_create_character_dialog()
+    
+    def show_limit_reached_dialog(self):
+        """Mostra diálogo informando que o limite foi atingido."""
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Limite Atingido")
+        dialog.geometry("400x300")
+        dialog.transient(self)
+        dialog.grab_set()
+        
+        # Centralizar o diálogo
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (400 // 2)
+        y = (dialog.winfo_screenheight() // 2) - (300 // 2)
+        dialog.geometry(f"400x300+{x}+{y}")
+        
+        # Frame principal
+        main_frame = ctk.CTkFrame(dialog)
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        # Ícone e título
+        title_label = ctk.CTkLabel(main_frame, text="⚠️ Limite Atingido", 
+                                  font=ctk.CTkFont(size=20, weight="bold"))
+        title_label.pack(pady=(20, 10))
+        
+        # Mensagem
+        message_label = ctk.CTkLabel(main_frame, 
+                                   text="Você já criou 3 personagens,\no limite máximo permitido.\n\nPara criar um novo personagem,\nvocê deve deletar um existente.",
+                                   font=ctk.CTkFont(size=14),
+                                   justify="center")
+        message_label.pack(pady=20)
+        
+        # Informação adicional
+        info_label = ctk.CTkLabel(main_frame, 
+                                text="💡 Dica: Clique no botão 'Deletar' ao lado\ndo personagem que deseja remover.",
+                                font=ctk.CTkFont(size=12),
+                                text_color="gray",
+                                justify="center")
+        info_label.pack(pady=10)
+        
+        # Botão OK
+        ok_button = ctk.CTkButton(main_frame, text="✅ Entendi", command=dialog.destroy,
+                                 font=ctk.CTkFont(size=14))
+        ok_button.pack(pady=20)
+
     def show_create_character_dialog(self):
         """Mostra diálogo para criar personagem."""
         dialog = ctk.CTkToplevel(self)
@@ -695,6 +794,173 @@ class HomeScreen(ctk.CTkFrame):
         close_btn = ctk.CTkButton(scroll_frame, text="❌ Fechar", command=dialog.destroy,
                                  font=ctk.CTkFont(size=14))
         close_btn.pack(pady=20)
+
+    def confirm_delete_character(self, character):
+        """Mostra diálogo de confirmação para deletar personagem."""
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Confirmar Exclusão")
+        dialog.geometry("600x500")
+        dialog.transient(self)
+        dialog.grab_set()
+        dialog.resizable(False, False)
+        
+        # Centralizar o diálogo
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (600 // 2)
+        y = (dialog.winfo_screenheight() // 2) - (500 // 2)
+        dialog.geometry(f"600x500+{x}+{y}")
+
+        # Frame principal com scroll se necessário
+        main_frame = ctk.CTkFrame(dialog)
+        main_frame.pack(fill="both", expand=True, padx=30, pady=30)
+        
+        # Ícone de aviso
+        warning_label = ctk.CTkLabel(main_frame, text="⚠️", 
+                                    font=ctk.CTkFont(size=48))
+        warning_label.pack(pady=(30, 15))
+        
+        # Título
+        title_label = ctk.CTkLabel(main_frame, text="Confirmar Exclusão", 
+                                  font=ctk.CTkFont(size=20, weight="bold"))
+        title_label.pack(pady=(0, 15))
+        
+        # Nome do personagem
+        character_name = character.get('name', 'Personagem')
+        character_class = character.get('character_class', 'Classe')
+        
+        char_info_label = ctk.CTkLabel(main_frame, 
+                                      text=f"'{character_name}' - {character_class}",
+                                      font=ctk.CTkFont(size=18, weight="bold"),
+                                      text_color="#d32f2f")
+        char_info_label.pack(pady=(0, 20))
+        
+        # Mensagem de confirmação
+        message_label = ctk.CTkLabel(main_frame, 
+                                   text="Tem certeza que deseja deletar\neste personagem?\n\n⚠️ Esta ação não pode ser desfeita!",
+                                   font=ctk.CTkFont(size=16),
+                                   justify="center")
+        message_label.pack(pady=(10, 30))
+        
+        def delete_character():
+            """Executa a exclusão do personagem."""
+            token = self.controller.access_token
+            if not token:
+                dialog.destroy()
+                self.controller.show_screen('LoginScreen')
+                return
+            
+            result = api_client.delete_character(token, character_name)
+            
+            if result and not result.get('error'):
+                dialog.destroy()
+                # Recarregar lista de personagens
+                self.load_personagens()
+                # Mostrar mensagem de sucesso
+                self.show_success_message(f"Personagem '{character_name}' deletado com sucesso!")
+            else:
+                error_msg = result.get('error', 'Erro desconhecido') if result else 'Erro na comunicação'
+                dialog.destroy()
+                self.show_error_message(f"Erro ao deletar personagem: {error_msg}")
+        
+        # Frame dos botões - versão ultra-simplificada
+        buttons_frame = ctk.CTkFrame(main_frame)
+        buttons_frame.pack(pady=30, padx=30, fill="x")
+        
+        # Container interno para os botões
+        inner_frame = ctk.CTkFrame(buttons_frame, fg_color="transparent")
+        inner_frame.pack(pady=20, expand=True)
+        
+        # Botão Cancelar
+        cancel_btn = ctk.CTkButton(inner_frame, 
+                                  text="❌ Cancelar", 
+                                  command=dialog.destroy,
+                                  width=150,
+                                  height=50,
+                                  font=ctk.CTkFont(size=16, weight="bold"))
+        cancel_btn.pack(side="left", padx=20)
+        
+        # Botão Deletar
+        delete_btn = ctk.CTkButton(inner_frame, 
+                                  text="🗑️ Deletar", 
+                                  command=delete_character,
+                                  width=150,
+                                  height=50,
+                                  fg_color="#d32f2f",
+                                  hover_color="#b71c1c",
+                                  font=ctk.CTkFont(size=16, weight="bold"))
+        delete_btn.pack(side="left", padx=20)
+
+    def show_success_message(self, message):
+        """Mostra uma mensagem de sucesso."""
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Sucesso")
+        dialog.geometry("450x300")
+        dialog.transient(self)
+        dialog.grab_set()
+        
+        # Centralizar o diálogo
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (450 // 2)
+        y = (dialog.winfo_screenheight() // 2) - (300 // 2)
+        dialog.geometry(f"450x300+{x}+{y}")
+        
+        # Frame principal
+        main_frame = ctk.CTkFrame(dialog)
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        # Ícone de sucesso
+        success_label = ctk.CTkLabel(main_frame, text="✅", 
+                                    font=ctk.CTkFont(size=36))
+        success_label.pack(pady=(20, 10))
+        
+        # Mensagem
+        message_label = ctk.CTkLabel(main_frame, text=message,
+                                   font=ctk.CTkFont(size=14),
+                                   justify="center")
+        message_label.pack(pady=10)
+        
+        # Botão OK
+        ok_btn = ctk.CTkButton(main_frame, text="✅ OK", command=dialog.destroy,
+                              font=ctk.CTkFont(size=14))
+        ok_btn.pack(pady=15)
+        
+        # Auto fechar após 3 segundos
+        dialog.after(3000, dialog.destroy)
+
+    def show_error_message(self, message):
+        """Mostra uma mensagem de erro."""
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Erro")
+        dialog.geometry("350x200")
+        dialog.transient(self)
+        dialog.grab_set()
+        
+        # Centralizar o diálogo
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (350 // 2)
+        y = (dialog.winfo_screenheight() // 2) - (200 // 2)
+        dialog.geometry(f"350x200+{x}+{y}")
+        
+        # Frame principal
+        main_frame = ctk.CTkFrame(dialog)
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        # Ícone de erro
+        error_label = ctk.CTkLabel(main_frame, text="❌", 
+                                  font=ctk.CTkFont(size=36))
+        error_label.pack(pady=(20, 10))
+        
+        # Mensagem
+        message_label = ctk.CTkLabel(main_frame, text=message,
+                                   font=ctk.CTkFont(size=14),
+                                   justify="center",
+                                   text_color="#d32f2f")
+        message_label.pack(pady=10)
+        
+        # Botão OK
+        ok_btn = ctk.CTkButton(main_frame, text="❌ OK", command=dialog.destroy,
+                              font=ctk.CTkFont(size=14))
+        ok_btn.pack(pady=15)
 
     def logout(self):
         self.controller.access_token = None
