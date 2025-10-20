@@ -299,3 +299,253 @@ def get_starting_items_for_class(character_class: str):
         "classe": character_class,
         "itens_iniciais": detailed_items
     }
+
+# ==================== ENDPOINTS DA LOJA ====================
+
+from pydantic import BaseModel
+
+class BuyItemRequest(BaseModel):
+    character_name: str
+    item_name: str
+    quantity: int = 1
+
+class SellItemRequest(BaseModel):
+    character_name: str
+    item_name: str
+    quantity: int = 1
+
+@router.post("/shop/buy")
+def buy_item(request: BuyItemRequest, authorization: str = Header(None)):
+    """
+    Compra um item da loja para um personagem.
+    Deduz o ouro e adiciona o item ao inventário.
+    """
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Não autorizado")
+
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(status_code=401, detail="Formato de token inválido")
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Formato de token inválido")
+
+    user_id = verify_key(token)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Token inválido ou expirado")
+
+    # Buscar personagens do usuário
+    personagens_doc = personagens_collection.document(user_id).get()
+    if not personagens_doc.exists:
+        raise HTTPException(status_code=404, detail="Nenhum personagem encontrado")
+    
+    personagens_data = personagens_doc.to_dict().get("personagens", [])
+    
+    # Encontrar o personagem específico
+    personagem = None
+    personagem_index = None
+    for i, char in enumerate(personagens_data):
+        if char.get("name", "").lower() == request.character_name.lower():
+            personagem = char
+            personagem_index = i
+            break
+    
+    if not personagem:
+        raise HTTPException(status_code=404, detail="Personagem não encontrado")
+    
+    # Verificar se o item existe no catálogo
+    item_info = ItemTable.get_item_info(request.item_name)
+    if not item_info:
+        raise HTTPException(status_code=404, detail="Item não encontrado no catálogo")
+    
+    item_price = item_info.get("valor", 0)
+    total_price = item_price * request.quantity
+    
+    # Verificar se tem ouro suficiente
+    current_gold = personagem.get("gold", 0)
+    if current_gold < total_price:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Ouro insuficiente. Necessário: {total_price}, Disponível: {current_gold}"
+        )
+    
+    # Verificar restrição de classe
+    required_class = item_info.get("classe")
+    character_class = personagem.get("character_class")
+    if required_class and required_class != character_class:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Este item é exclusivo para a classe {required_class}"
+        )
+    
+    # Atualizar ouro
+    personagens_data[personagem_index]["gold"] = current_gold - total_price
+    
+    # Atualizar inventário
+    if "itens" not in personagens_data[personagem_index]:
+        personagens_data[personagem_index]["itens"] = {}
+    
+    current_quantity = personagens_data[personagem_index]["itens"].get(request.item_name, 0)
+    personagens_data[personagem_index]["itens"][request.item_name] = current_quantity + request.quantity
+    
+    # Salvar no Firebase
+    try:
+        personagens_collection.document(user_id).update({
+            "personagens": personagens_data
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao salvar transação: {str(e)}")
+    
+    return {
+        "success": True,
+        "message": f"Item '{request.item_name}' comprado com sucesso!",
+        "quantity": request.quantity,
+        "total_price": total_price,
+        "gold_remaining": personagens_data[personagem_index]["gold"],
+        "inventory": personagens_data[personagem_index]["itens"]
+    }
+
+@router.post("/shop/sell")
+def sell_item(request: SellItemRequest, authorization: str = Header(None)):
+    """
+    Vende um item do inventário do personagem.
+    Adiciona 50% do valor original em ouro.
+    """
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Não autorizado")
+
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(status_code=401, detail="Formato de token inválido")
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Formato de token inválido")
+
+    user_id = verify_key(token)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Token inválido ou expirado")
+
+    # Buscar personagens do usuário
+    personagens_doc = personagens_collection.document(user_id).get()
+    if not personagens_doc.exists:
+        raise HTTPException(status_code=404, detail="Nenhum personagem encontrado")
+    
+    personagens_data = personagens_doc.to_dict().get("personagens", [])
+    
+    # Encontrar o personagem específico
+    personagem = None
+    personagem_index = None
+    for i, char in enumerate(personagens_data):
+        if char.get("name", "").lower() == request.character_name.lower():
+            personagem = char
+            personagem_index = i
+            break
+    
+    if not personagem:
+        raise HTTPException(status_code=404, detail="Personagem não encontrado")
+    
+    # Verificar se o personagem tem o item
+    inventory = personagem.get("itens", {})
+    current_quantity = inventory.get(request.item_name, 0)
+    
+    if current_quantity < request.quantity:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Quantidade insuficiente. Você tem: {current_quantity}, Tentando vender: {request.quantity}"
+        )
+    
+    # Buscar informações do item para calcular preço de venda
+    item_info = ItemTable.get_item_info(request.item_name)
+    if not item_info:
+        raise HTTPException(status_code=404, detail="Item não encontrado no catálogo")
+    
+    item_price = item_info.get("valor", 0)
+    sell_price = (item_price // 2) * request.quantity  # 50% do valor original
+    
+    # Atualizar ouro
+    current_gold = personagem.get("gold", 0)
+    personagens_data[personagem_index]["gold"] = current_gold + sell_price
+    
+    # Atualizar inventário
+    new_quantity = current_quantity - request.quantity
+    if new_quantity <= 0:
+        # Remove o item do inventário se a quantidade chegar a 0
+        personagens_data[personagem_index]["itens"].pop(request.item_name, None)
+    else:
+        personagens_data[personagem_index]["itens"][request.item_name] = new_quantity
+    
+    # Salvar no Firebase
+    try:
+        personagens_collection.document(user_id).update({
+            "personagens": personagens_data
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao salvar transação: {str(e)}")
+    
+    return {
+        "success": True,
+        "message": f"Item '{request.item_name}' vendido com sucesso!",
+        "quantity": request.quantity,
+        "gold_received": sell_price,
+        "gold_total": personagens_data[personagem_index]["gold"],
+        "inventory": personagens_data[personagem_index]["itens"]
+    }
+
+@router.get("/shop/items")
+def get_shop_items(authorization: str = Header(None)):
+    """
+    Retorna todos os itens disponíveis na loja.
+    """
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Não autorizado")
+
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(status_code=401, detail="Formato de token inválido")
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Formato de token inválido")
+
+    user_id = verify_key(token)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Token inválido ou expirado")
+    
+    return {
+        "items": ItemTable.ALL_ITEMS
+    }
+
+@router.get("/personagens/{character_name}/gold")
+def get_character_gold(character_name: str, authorization: str = Header(None)):
+    """
+    Retorna o ouro atual de um personagem específico.
+    """
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Não autorizado")
+
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(status_code=401, detail="Formato de token inválido")
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Formato de token inválido")
+
+    user_id = verify_key(token)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Token inválido ou expirado")
+
+    # Buscar personagens do usuário
+    personagens_doc = personagens_collection.document(user_id).get()
+    if not personagens_doc.exists:
+        raise HTTPException(status_code=404, detail="Nenhum personagem encontrado")
+    
+    personagens_data = personagens_doc.to_dict().get("personagens", [])
+    
+    # Encontrar o personagem específico
+    for char in personagens_data:
+        if char.get("name", "").lower() == character_name.lower():
+            return {
+                "character_name": char.get("name"),
+                "gold": char.get("gold", 0)
+            }
+    
+    raise HTTPException(status_code=404, detail="Personagem não encontrado")

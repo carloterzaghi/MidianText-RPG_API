@@ -98,3 +98,106 @@ def delete_character(token, character_name):
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")
         return {"error": str(e)}
+
+# ==================== Funções da Loja ====================
+
+def get_shop_items(token):
+    """
+    Fetches all items available in the shop.
+    """
+    url = f"{BASE_URL}/shop/items"
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return {"error": str(e)}
+
+def buy_item(token, character_name, item_name, quantity=1):
+    """
+    Buys an item from the shop for a character.
+    
+    Args:
+        token: Access token
+        character_name: Name of the character
+        item_name: Name of the item to buy
+        quantity: Quantity to buy (default: 1)
+    """
+    url = f"{BASE_URL}/shop/buy"
+    headers = {"Authorization": f"Bearer {token}"}
+    data = {
+        "character_name": character_name,
+        "item_name": item_name,
+        "quantity": quantity
+    }
+    try:
+        response = requests.post(url, json=data, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return {"error": str(e)}
+
+def sell_item(token, character_name, item_name, quantity=1):
+    """
+    Sells an item from character's inventory.
+    
+    Args:
+        token: Access token
+        character_name: Name of the character
+        item_name: Name of the item to sell
+        quantity: Quantity to sell (default: 1)
+    """
+    url = f"{BASE_URL}/shop/sell"
+    headers = {"Authorization": f"Bearer {token}"}
+    data = {
+        "character_name": character_name,
+        "item_name": item_name,
+        "quantity": quantity
+    }
+    try:
+        response = requests.post(url, json=data, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return {"error": str(e)}
+
+def get_character_inventory(token, character_name):
+    """
+    Fetches the inventory of a specific character.
+    
+    Args:
+        token: Access token
+        character_name: Name of the character
+    """
+    url = f"{BASE_URL}/personagens/{character_name}"
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return {"error": str(e)}
+
+def get_character_gold(token, character_name):
+    """
+    Fetches the gold of a specific character.
+    
+    Args:
+        token: Access token
+        character_name: Name of the character
+    """
+    url = f"{BASE_URL}/personagens/{character_name}/gold"
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return {"error": str(e)}
+

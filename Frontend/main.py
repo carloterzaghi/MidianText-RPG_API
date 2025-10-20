@@ -1,12 +1,13 @@
 import customtkinter as ctk
 import api_client
+from shop import ShopWindow
 
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
 
         self.title("MidianText RPG")
-        self.state('zoomed')
+        self.geometry("1200x800")  # Tamanho inicial da janela
 
         # store user data
         self.access_token = None
@@ -676,10 +677,14 @@ class HomeScreen(ctk.CTkFrame):
         }
         color_emoji = color_emojis.get(color, '⚫')
         
+        # Obter ouro do personagem
+        gold = character.get('gold', 0)
+        
         basic_details = [
             ("🆔 ID", character.get('id', 'N/A')[:12] + '...' if character.get('id') else 'N/A'),
             ("🎚️ Nível", character.get('level', 1)),
             ("🎨 Cor", f"{color_emoji} {color.title()}"),
+            ("💰 Ouro", f"{gold} moedas"),
         ]
         
         for label, value in basic_details:
@@ -1092,39 +1097,44 @@ class GameScreen(ctk.CTkFrame):
             name = character.get('name', 'N/A')
             char_class = character.get('character_class', 'N/A')
             level = character.get('level', 'N/A')
+            gold = character.get('gold', 0)
             
             # Verificar se existem status detalhados
             status_data = character.get('status', {})
             if status_data:
                 hp_atual = status_data.get('hp_atual', status_data.get('hp_max', 'N/A'))
                 hp_max = status_data.get('hp_max', 'N/A')
-                info_text = f"{name} | {char_class} | Nível: {level} | HP: {hp_atual}/{hp_max}"
+                info_text = f"{name} | {char_class} | Nível: {level} | HP: {hp_atual}/{hp_max} | 💰 {gold}"
             else:
-                info_text = f"{name} | {char_class} | Nível: {level}"
+                info_text = f"{name} | {char_class} | Nível: {level} | 💰 {gold}"
             self.character_info_label.configure(text=info_text)
 
     def open_shop(self):
         """Abre a tela da loja"""
-        shop_window = ctk.CTkToplevel(self)
-        shop_window.title("Loja")
-        shop_window.geometry("600x400")
-        shop_window.transient(self)
-        shop_window.grab_set()
-
-        # Centralizar a janela
-        shop_window.update_idletasks()
-        x = (shop_window.winfo_screenwidth() // 2) - (600 // 2)
-        y = (shop_window.winfo_screenheight() // 2) - (400 // 2)
-        shop_window.geometry(f"600x400+{x}+{y}")
-
-        label = ctk.CTkLabel(shop_window, text="🛍️ Loja", font=ctk.CTkFont(size=24, weight="bold"))
-        label.pack(pady=20)
-
-        info_label = ctk.CTkLabel(shop_window, text="Em desenvolvimento...", font=ctk.CTkFont(size=16))
-        info_label.pack(pady=20)
-
-        close_button = ctk.CTkButton(shop_window, text="Fechar", command=shop_window.destroy)
-        close_button.pack(pady=20)
+        if self.controller.selected_character:
+            ShopWindow(self, self.controller, self.controller.selected_character)
+        else:
+            # Fallback: mostrar mensagem de erro se não houver personagem selecionado
+            error_window = ctk.CTkToplevel(self)
+            error_window.title("Erro")
+            error_window.geometry("400x200")
+            error_window.transient(self)
+            error_window.grab_set()
+            
+            # Centralizar a janela
+            error_window.update_idletasks()
+            x = (error_window.winfo_screenwidth() // 2) - (400 // 2)
+            y = (error_window.winfo_screenheight() // 2) - (200 // 2)
+            error_window.geometry(f"400x200+{x}+{y}")
+            
+            label = ctk.CTkLabel(error_window, text="❌ Erro", font=ctk.CTkFont(size=24, weight="bold"))
+            label.pack(pady=20)
+            
+            info_label = ctk.CTkLabel(error_window, text="Nenhum personagem selecionado!", font=ctk.CTkFont(size=16))
+            info_label.pack(pady=20)
+            
+            close_button = ctk.CTkButton(error_window, text="Fechar", command=error_window.destroy)
+            close_button.pack(pady=20)
 
     def open_mission(self):
         """Abre a tela de missões"""
@@ -1181,6 +1191,7 @@ class GameScreen(ctk.CTkFrame):
             name = character.get('name', 'N/A')
             char_class = character.get('character_class', 'N/A')
             level = character.get('level', 'N/A')
+            gold = character.get('gold', 0)
 
             basic_frame = ctk.CTkFrame(scroll_frame)
             basic_frame.pack(fill="x", pady=10)
@@ -1193,6 +1204,7 @@ class GameScreen(ctk.CTkFrame):
 👤 Nome: {name}
 🎭 Classe: {char_class}
 🎚️ Nível: {level}
+💰 Ouro: {gold} moedas
 """
 
             basic_label = ctk.CTkLabel(basic_frame, text=basic_info, justify="left", font=ctk.CTkFont(size=14))

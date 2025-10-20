@@ -48,6 +48,7 @@ class CharacterResponse(BaseModel):
     defe: int
     mov: int
     color: Optional[str]
+    gold: int  # Campo de ouro/moedas
     created_at: str
     
 class Character:
@@ -56,6 +57,7 @@ class Character:
         self.name = name
         self.character_class = character_class
         self.level = 1
+        self.gold = 100  # Todo personagem novo recebe 100 moedas
         
         # Aplicar cor escolhida
         class_instance.put_color(color)
@@ -187,7 +189,8 @@ class Character:
             "status": self.status,
             "itens": self.itens,
             "habilidades": self.habilidades,
-            "color": self.color
+            "color": self.color,
+            "gold": self.gold
         }
     
     def to_dict_full(self):
@@ -201,6 +204,7 @@ class Character:
             "itens": self.itens,
             "habilidades": self.habilidades,
             "color": self.color,
+            "gold": self.gold,
             "hp_max": self.hp_max,
             "hp_tmp": self.hp_tmp,
             "strg": self.strg,
