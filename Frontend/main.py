@@ -1008,7 +1008,7 @@ class GameScreen(ctk.CTkFrame):
         self.grid_columnconfigure(0, weight=1)
 
         # Header com informações do personagem
-        self.header_frame = ctk.CTkFrame(self, height=120, fg_color="#2b2b2b")
+        self.header_frame = ctk.CTkFrame(self, height=120, fg_color=("#868686", "#1a1a1a"))
         self.header_frame.grid(row=0, column=0, sticky="ew", padx=20, pady=(20, 10))
         self.header_frame.grid_propagate(False)
         self.header_frame.grid_columnconfigure(1, weight=1)
@@ -1018,7 +1018,8 @@ class GameScreen(ctk.CTkFrame):
             self.header_frame, 
             text="", 
             font=ctk.CTkFont(size=18, weight="bold"),
-            wraplength=800
+            wraplength=800,
+            text_color=("#1a1a1a", "#ffffff")
         )
         self.character_info_label.grid(row=0, column=0, padx=20, pady=20, sticky="w")
 

@@ -133,7 +133,7 @@ class ShopWindow(ctk.CTkToplevel):
     
     def create_header(self, parent):
         """Cria o cabeçalho da loja."""
-        header_frame = ctk.CTkFrame(parent, fg_color=("#2b2b2b", "#1a1a1a"))
+        header_frame = ctk.CTkFrame(parent, fg_color=("#868686", "#1a1a1a"))
         header_frame.pack(fill="x", pady=(0, 10))
         
         # Título e informações do personagem
