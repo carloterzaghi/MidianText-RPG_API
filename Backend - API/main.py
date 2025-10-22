@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from commands.routes.login import router as login_router
 from commands.routes.personagens import router as personagens_router
+from commands.routes.missions import router as missions_router
 
 
 app = FastAPI()
@@ -16,9 +17,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Adicionar as rotas de login e personagens
+# Adicionar as rotas de login, personagens e missões
 app.include_router(login_router)
 app.include_router(personagens_router)
+app.include_router(missions_router)
 
 # Rodar a API
 if __name__ == "__main__":

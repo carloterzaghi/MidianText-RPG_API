@@ -1,12 +1,13 @@
 from itsdangerous import URLSafeTimedSerializer
 from dotenv import load_dotenv
-import secrets
+import os
 
 # Carregar variáveis de ambiente do arquivo .env
 load_dotenv()
 
 # Chave secreta para assinar os tokens
-SECRET_KEY = secrets.token_urlsafe(32)
+# Use uma chave fixa do ambiente ou uma padrão para desenvolvimento
+SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-midiantext-rpg-2025-change-in-production')
 
 # Serializer para gerar e verificar tokens com tempo de expiração
 serializer = URLSafeTimedSerializer(SECRET_KEY)
@@ -35,8 +36,11 @@ def verify_key(key: str) -> str | None:
         str | None: O ID do usuário se a chave for válida, ou None caso contrário.
     """
     try:
-        # Verifica o token com um tempo de expiração de 30 minutos
-        user_id = serializer.loads(key, max_age=1800)
+        print(f"DEBUG verify_key: Attempting to verify token")
+        # Verifica o token com um tempo de expiração de 2 horas (7200 segundos)
+        user_id = serializer.loads(key, max_age=7200)
+        print(f"DEBUG verify_key: Token valid, user_id: {user_id}")
         return user_id
-    except Exception:
+    except Exception as e:
+        print(f"DEBUG verify_key: Token validation failed - {type(e).__name__}: {str(e)}")
         return None

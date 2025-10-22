@@ -1,6 +1,7 @@
 import customtkinter as ctk
 import api_client
 from shop import ShopWindow
+from missions import MissionsWindow
 
 class App(ctk.CTk):
     def __init__(self):
@@ -1139,26 +1140,30 @@ class GameScreen(ctk.CTkFrame):
 
     def open_mission(self):
         """Abre a tela de missões"""
-        mission_window = ctk.CTkToplevel(self)
-        mission_window.title("Missões")
-        mission_window.geometry("600x400")
-        mission_window.transient(self)
-        mission_window.grab_set()
-
-        # Centralizar a janela
-        mission_window.update_idletasks()
-        x = (mission_window.winfo_screenwidth() // 2) - (600 // 2)
-        y = (mission_window.winfo_screenheight() // 2) - (400 // 2)
-        mission_window.geometry(f"600x400+{x}+{y}")
-
-        label = ctk.CTkLabel(mission_window, text="⚔️ Missões", font=ctk.CTkFont(size=24, weight="bold"))
-        label.pack(pady=20)
-
-        info_label = ctk.CTkLabel(mission_window, text="Em desenvolvimento...", font=ctk.CTkFont(size=16))
-        info_label.pack(pady=20)
-
-        close_button = ctk.CTkButton(mission_window, text="Fechar", command=mission_window.destroy)
-        close_button.pack(pady=20)
+        if self.controller.selected_character:
+            MissionsWindow(self, self.controller, self.controller.selected_character)
+        else:
+            # Fallback: mostrar mensagem de erro se não houver personagem selecionado
+            error_window = ctk.CTkToplevel(self)
+            error_window.title("Erro")
+            error_window.geometry("400x200")
+            error_window.transient(self)
+            error_window.grab_set()
+            
+            # Centralizar a janela
+            error_window.update_idletasks()
+            x = (error_window.winfo_screenwidth() // 2) - (400 // 2)
+            y = (error_window.winfo_screenheight() // 2) - (200 // 2)
+            error_window.geometry(f"400x200+{x}+{y}")
+            
+            label = ctk.CTkLabel(error_window, text="❌ Erro", font=ctk.CTkFont(size=24, weight="bold"))
+            label.pack(pady=20)
+            
+            info_label = ctk.CTkLabel(error_window, text="Nenhum personagem selecionado!", font=ctk.CTkFont(size=16))
+            info_label.pack(pady=20)
+            
+            close_button = ctk.CTkButton(error_window, text="Fechar", command=error_window.destroy)
+            close_button.pack(pady=20)
 
     def open_character(self):
         """Abre a tela de informações do personagem"""

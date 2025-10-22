@@ -201,3 +201,86 @@ def get_character_gold(token, character_name):
         print(f"An error occurred: {e}")
         return {"error": str(e)}
 
+# ==================== Funções de Missões ====================
+
+def get_missions(token):
+    """
+    Fetches all available missions.
+    """
+    url = f"{BASE_URL}/missions"
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return {"error": str(e)}
+
+def start_mission(token, character_name, mission_id):
+    """
+    Starts a mission for a character.
+    
+    Args:
+        token: Access token
+        character_name: Name of the character
+        mission_id: ID of the mission to start
+    """
+    url = f"{BASE_URL}/missions/start"
+    headers = {"Authorization": f"Bearer {token}"}
+    data = {
+        "character_name": character_name,
+        "mission_id": mission_id
+    }
+    try:
+        response = requests.post(url, json=data, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return {"error": str(e)}
+
+def mission_action(token, character_name, mission_id, action, target=None):
+    """
+    Performs an action during a mission.
+    
+    Args:
+        token: Access token
+        character_name: Name of the character
+        mission_id: ID of the mission
+        action: Action to perform ('move', 'fight', 'collect')
+        target: Target of the action (direction, enemy_id, or treasure_id)
+    """
+    url = f"{BASE_URL}/missions/action"
+    headers = {"Authorization": f"Bearer {token}"}
+    data = {
+        "character_name": character_name,
+        "mission_id": mission_id,
+        "action": action,
+        "target": target
+    }
+    try:
+        response = requests.post(url, json=data, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return {"error": str(e)}
+
+def get_mission_details(token, mission_id):
+    """
+    Fetches details of a specific mission.
+    
+    Args:
+        token: Access token
+        mission_id: ID of the mission
+    """
+    url = f"{BASE_URL}/missions/{mission_id}"
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return {"error": str(e)}
