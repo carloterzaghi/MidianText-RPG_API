@@ -1,50 +1,169 @@
+"""
+MidianText RPG - Interface Gráfica Principal (Frontend)
+========================================================
+
+Este módulo implementa a interface gráfica do usuário (GUI) para o jogo
+MidianText RPG utilizando CustomTkinter.
+
+A aplicação gerencia múltiplas telas em um sistema de navegação baseado em frames:
+- LoginScreen: Autenticação de usuários
+- RegisterScreen: Registro de novos usuários
+- HomeScreen: Gerenciamento de personagens
+- GameScreen: Interface principal do jogo
+
+Arquitetura:
+    - App: Controlador principal que gerencia telas e estado global
+    - Screens: Cada tela é uma classe que herda de ctk.CTkFrame
+    - API Client: Comunicação com backend via módulo api_client
+    - State Management: Token JWT e dados do usuário armazenados no App
+
+Features:
+    - Sistema de autenticação JWT
+    - CRUD completo de personagens (até 3 por usuário)
+    - Sistema de cores com vantagens (Rock-Paper-Scissors)
+    - Visualização detalhada de personagens
+    - Integração com sistema de missões e loja
+    - Confirmação de ações destrutivas
+
+Technology Stack:
+    - CustomTkinter: Framework GUI moderno baseado em Tkinter
+    - Requests: Cliente HTTP para comunicação com API
+    - Pillow (PIL): Manipulação de imagens (se aplicável)
+
+Author: Carlo Terzaghi
+Version: 1.0
+Python: 3.8+
+"""
+
 import customtkinter as ctk
 import api_client
 from shop import ShopWindow
 from missions import MissionsWindow
 
+
 class App(ctk.CTk):
+    """
+    Classe principal da aplicação MidianText RPG.
+    
+    Gerencia o ciclo de vida completo da aplicação, incluindo:
+    - Navegação entre telas
+    - Armazenamento do estado global (autenticação, usuário atual)
+    - Gerenciamento do personagem selecionado para jogar
+    
+    Attributes:
+        access_token (str): Token JWT para autenticação nas requisições
+        current_user (str): Nome de usuário autenticado
+        selected_character (dict): Dados do personagem atualmente selecionado
+        screens (dict): Dicionário de todas as telas disponíveis
+    
+    Example:
+        >>> app = App()
+        >>> app.mainloop()
+    """
+    
     def __init__(self):
+        """
+        Inicializa a aplicação principal.
+        
+        Configura:
+        - Janela principal com título e tamanho
+        - Variáveis de estado (token, usuário, personagem)
+        - Container para gerenciar múltiplas telas
+        - Registro de todas as telas disponíveis
+        - Exibe a tela de login inicial
+        """
         super().__init__()
 
+        # Configurações da janela principal
         self.title("MidianText RPG")
         self.geometry("1200x800")  # Tamanho inicial da janela
 
-        # store user data
-        self.access_token = None
-        self.current_user = None
+        # Armazenamento do estado global da aplicação
+        self.access_token = None  # Token JWT para autenticação
+        self.current_user = None  # Nome do usuário autenticado
         self.selected_character = None  # Personagem selecionado para jogar
 
-        # create a container for screens
+        # Cria um container para gerenciar as diferentes telas
         container = ctk.CTkFrame(self)
         container.pack(side="top", fill="both", expand=True)
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
 
+        # Dicionário para armazenar todas as telas
         self.screens = {}
 
+        # Registra todas as telas disponíveis no aplicativo
         for F in (LoginScreen, RegisterScreen, HomeScreen, GameScreen):
             page_name = F.__name__
             frame = F(parent=container, controller=self)
             self.screens[page_name] = frame
+            # Empilha todas as telas no mesmo espaço (grid)
             frame.grid(row=0, column=0, sticky="nsew")
 
+        # Exibe a tela de login como tela inicial
         self.show_screen("LoginScreen")
 
-    def show_screen(self, page_name):
-        '''Show a screen for the given page name'''
+    def show_screen(self, page_name: str):
+        """
+        Exibe uma tela específica e oculta as demais.
+        
+        Args:
+            page_name (str): Nome da classe da tela a exibir
+                Opções: "LoginScreen", "RegisterScreen", "HomeScreen", "GameScreen"
+        
+        Notes:
+            - Chama o método on_enter() para telas que precisam carregar dados
+            - HomeScreen: recarrega lista de personagens
+            - GameScreen: atualiza interface do jogo
+        
+        Example:
+            >>> self.show_screen("HomeScreen")
+        """
         screen = self.screens[page_name]
+        
+        # Executa lógica de entrada para telas específicas
         if page_name == "HomeScreen":
             screen.on_enter()
         elif page_name == "GameScreen":
             screen.on_enter()
+        
+        # Traz a tela para frente (tkraise)
         screen.tkraise()
 
+
 class LoginScreen(ctk.CTkFrame):
+    """
+    Tela de autenticação de usuários.
+    
+    Permite que usuários existentes façam login no sistema usando
+    credenciais (username e senha). Após autenticação bem-sucedida,
+    recebe um token JWT do backend.
+    
+    Attributes:
+        controller (App): Referência à aplicação principal
+        username_entry (CTkEntry): Campo de entrada para username
+        password_entry (CTkEntry): Campo de entrada para senha (oculta)
+        error_label (CTkLabel): Label para exibir mensagens de erro
+    
+    Features:
+        - Validação de campos obrigatórios
+        - Feedback visual de erros
+        - Navegação para tela de registro
+        - Armazenamento de token após login bem-sucedido
+    """
+    
     def __init__(self, parent, controller):
+        """
+        Inicializa a tela de login.
+        
+        Args:
+            parent (CTkFrame): Container pai que contém esta tela
+            controller (App): Instância da aplicação principal
+        """
         super().__init__(parent)
         self.controller = controller
 
+        # Configuração de layout responsivo
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
