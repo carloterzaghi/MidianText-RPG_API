@@ -24,8 +24,6 @@ Technology Stack:
     - JWT: Autenticação stateless
     - Uvicorn: Servidor ASGI
 
-Author: Carlo Terzaghi
-Version: 1.0
 Port: 8000
 """
 
