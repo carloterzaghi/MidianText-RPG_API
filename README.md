@@ -2,836 +2,386 @@
 
 <div align="center">
 
-![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)
-![Firebase](https://img.shields.io/badge/Firebase-Firestore-orange.svg)
-![License](https://img.shields.io/badge/License-Proprietary-red.svg)
+![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-Firestore-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
+![CustomTkinter](https://img.shields.io/badge/CustomTkinter-5.2+-1f538d?style=for-the-badge)
 
-**Um RPG de texto moderno com interface gráfica e arquitetura cliente-servidor**
+**RPG de Texto Moderno | Arquitetura Cliente-Servidor | Cloud Database**
 
-[Características](#-características-principais) • [Instalação](#-instalação) • [Uso](#-guia-de-uso) • [API](#-api-reference) • [Sistemas](#-sistemas-de-jogo)
+*Sistema de Classes Balanceado • Combate Estratégico por Cores • Economia Persistente*
+
+[Início Rápido](#-início-rápido) • [Documentação](#-como-funciona) • [API](#-endpoints-da-api) • [Mecânicas](#-mecânicas-de-jogo)
 
 </div>
 
 ---
 
-## 📋 Índice
+## 📋 O Que É Este Projeto?
 
-- [Visão Geral](#-visão-geral)
-- [Características Principais](#-características-principais)
-- [Arquitetura do Sistema](#️-arquitetura-do-sistema)
-- [Stack Tecnológico](#-stack-tecnológico)
-- [Instalação](#-instalação)
-- [Guia de Uso](#-guia-de-uso)
-- [Estrutura do Projeto](#-estrutura-do-projeto)
-- [Sistemas de Jogo](#-sistemas-de-jogo)
-- [API Reference](#-api-reference)
-- [Banco de Dados](#-estrutura-do-banco-de-dados)
-- [Troubleshooting](#-troubleshooting)
-- [Roadmap](#-roadmap)
-- [Autor](#-autor)
+**MidianText RPG** é um jogo completo de RPG desenvolvido em Python com:
 
----
+- 🎯 **Backend RESTful** (FastAPI) + **Frontend Gráfico** (CustomTkinter)
+- 🔐 **Autenticação JWT** + **Persistência Cloud** (Firebase Firestore)
+- ⚔️ **4 Classes Balanceadas** + **Sistema de Cores Estratégico**
+- 🛍️ **Loja com Economia** + **Sistema de Missões**
+- 🚀 **Launcher Único** (`run.py`) que inicia tudo automaticamente
 
-## 🎯 Visão Geral
+### 💡 Diferenciais Técnicos
 
-**MidianText RPG** é um jogo de RPG baseado em texto com interface gráfica moderna, desenvolvido em Python. O projeto utiliza uma arquitetura cliente-servidor robusta, onde o backend gerencia toda a lógica de negócio e persistência de dados no Firebase Firestore, enquanto o frontend fornece uma experiência visual rica e intuitiva através do CustomTkinter.
-
-### 🌟 Características Principais
-
-- ✅ **Sistema de Autenticação Seguro**: JWT-based authentication com tokens temporários
-- ✅ **Gerenciamento de Personagens**: CRUD completo com limite de 3 personagens por usuário
-- ✅ **4 Classes Únicas**: Assassino, Arqueiro, Mago e Soldado - cada um com stats e habilidades exclusivas
-- ✅ **Sistema de Cores Estratégico**: Mecânica tipo pedra-papel-tesoura com vantagens de combate (1.5x dano)
-- ✅ **Sistema de Missões**: Missões com mapas, inimigos e recompensas dinâmicas
-- ✅ **Loja Integrada**: Compra e venda de itens com economia persistente
-- ✅ **Persistência Cloud**: Todos os dados salvos em tempo real no Firebase Firestore
-- ✅ **Interface Moderna**: CustomTkinter com design clean e responsivo
-- ✅ **Sistema de Inventário**: Gerenciamento completo de itens e equipamentos
-- ✅ **Exclusão com Confirmação**: Proteção contra deleção acidental de personagens
+- ✅ Arquitetura cliente-servidor profissional
+- ✅ Separação clara de responsabilidades (Backend/Frontend)
+- ✅ Processo de inicialização automatizado via `run.py`
+- ✅ Validação de dados com Pydantic models
+- ✅ Transações atômicas no Firebase
+- ✅ Interface moderna com CustomTkinter
 
 ---
 
-## 🏗️ Arquitetura do Sistema
+## 🚀 Início Rápido (3 Passos)
 
-```
-┌─────────────────────────┐
-│   Frontend (GUI)        │ ← CustomTkinter + Requests
-│   • Telas de Login      │
-│   • Gerenciamento Chars │
-│   • Loja e Missões      │
-└───────────┬─────────────┘
-            │ HTTP/REST API
-            ↓
-┌─────────────────────────┐
-│   API Client Module     │ ← Camada de Comunicação
-│   • Authentication      │
-│   • Character CRUD      │
-│   • Shop & Missions     │
-└───────────┬─────────────┘
-            │ HTTP Requests
-            ↓
-┌─────────────────────────┐
-│   FastAPI Backend       │ ← Servidor Web ASGI
-│   • JWT Validation      │
-│   • Business Logic      │
-│   • Data Validation     │
-└───────────┬─────────────┘
-            │ Firebase Admin SDK
-            ↓
-┌─────────────────────────┐
-│   Firebase Firestore    │ ← Cloud NoSQL Database
-│   • Users Collection    │
-│   • Characters Data     │
-│   • Missions State      │
-└─────────────────────────┘
-```
-
-### 📊 Fluxo de Dados
-
-1. **Usuário interage** com a interface gráfica (CustomTkinter)
-2. **Frontend solicita** dados via `api_client.py` (camada de abstração)
-3. **API Client envia** requisição HTTP/REST autenticada para o backend
-4. **FastAPI valida** JWT token e dados com Pydantic models
-5. **Backend processa** lógica de negócio (validações, cálculos, regras)
-6. **Firebase persiste/busca** dados no Firestore (transações atômicas)
-7. **Backend retorna** resposta JSON estruturada
-8. **Frontend atualiza** UI em tempo real com os dados recebidos
-
----
-
-## 🛠️ Stack Tecnológico
-
-### Backend
-| Tecnologia | Versão | Função |
-|-----------|--------|--------|
-| **Python** | 3.8+ | Linguagem principal |
-| **FastAPI** | 0.104+ | Framework web moderno e rápido |
-| **Uvicorn** | 0.24+ | Servidor ASGI de alta performance |
-| **Firebase Admin SDK** | 6.2+ | Integração com Firestore Database |
-| **Pydantic** | 2.4+ | Validação de dados e serialização |
-| **python-jose** | 3.3+ | Geração e validação de JWT tokens |
-| **passlib** | 1.7+ | Hashing de senhas com bcrypt |
-
-### Frontend
-| Tecnologia | Versão | Função |
-|-----------|--------|--------|
-| **Python** | 3.8+ | Linguagem principal |
-| **CustomTkinter** | 5.2+ | Framework GUI moderno |
-| **Requests** | 2.31+ | Cliente HTTP para API REST |
-| **Pillow** | 10.1+ | Processamento de imagens |
-
----
-
-## 📥 Instalação
-
-### Pré-requisitos
-
-- ✅ **Python 3.8 ou superior** instalado
-- ✅ **pip** (gerenciador de pacotes Python)
-- ✅ **Conta Firebase** com projeto configurado
-- ✅ **Conexão com internet** (para Firebase)
-
-### Passo a Passo
-
-#### 1️⃣ Clone o Repositório
+### 1️⃣ Instalar Dependências
 
 ```bash
+# Clone o repositório
 git clone https://github.com/carloterzaghi/MidianText-RPG_API.git
 cd MidianText-RPG_API
-```
 
-#### 2️⃣ Instale as Dependências
-
-```bash
+# Instale as bibliotecas
 pip install -r requirements.txt
 ```
 
-**Dependências incluídas**:
-```
-fastapi==0.104.1
-uvicorn==0.24.0
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-python-multipart==0.0.6
-firebase-admin==6.2.0
-pydantic==2.4.2
-requests==2.31.0
-customtkinter==5.2.0
-pillow==10.1.0
-```
+### 2️⃣ Configurar Firebase
 
-#### 3️⃣ Configure o Firebase
+1. Crie projeto em: https://console.firebase.google.com/
+2. Baixe credenciais: **Configurações** → **Contas de Serviço** → **Gerar Chave**
+3. Salve como: `Backend - API/commands/keys/firebase.json`
 
-1. Acesse o [Firebase Console](https://console.firebase.google.com/)
-2. Crie um novo projeto ou use um existente
-3. Vá em **Project Settings** → **Service Accounts**
-4. Clique em **Generate New Private Key**
-5. Salve o arquivo JSON em `Backend - API/commands/keys/`
-6. Renomeie para `firebase.json`
+### 3️⃣ Executar
 
-#### 4️⃣ Configure Variáveis de Ambiente (Opcional)
-
-Crie um arquivo `.env` na raiz do projeto:
-
-```env
-SECRET_KEY=sua-chave-secreta-jwt-aqui
-TOKEN_EXPIRATION=30
-```
-
-#### 5️⃣ Execute a Aplicação
-
-**Opção 1: Launcher Automático (Recomendado)**
 ```bash
+# ⭐ Execute apenas este comando:
 python run.py
+
+# O que acontece:
+# ✅ Backend inicia automaticamente (porta 8000)
+# ✅ Aguarda 3s para estabilização
+# ✅ Frontend abre em nova janela
+# ✅ Pronto para jogar!
 ```
 
-**Opção 2: Execução Manual**
-```bash
-# Terminal 1 - Backend
-cd "Backend - API"
-python main.py
-
-# Terminal 2 - Frontend
-cd Frontend
-python main.py
-```
-
-#### 6️⃣ Acesse a Documentação Interativa
-
-Abra seu navegador em: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+**Acesse a documentação da API**: http://127.0.0.1:8000/docs
 
 ---
 
-## 📖 Guia de Uso
+## 🏗️ Como Funciona (Arquitetura)
 
-### 🎮 Primeira Execução
+### 📐 Diagrama Simplificado
 
-#### **1. Registre um Usuário**
-- Clique em **"Registrar"** na tela de login
-- Escolha um **username** (2-20 caracteres alfanuméricos)
-- Crie uma **senha** (mínimo 6 caracteres)
-- Confirme o registro
+```
+┌─────────────────────────────────────────────────┐
+│         🚀 run.py (LAUNCHER PRINCIPAL)          │
+│  • Inicia Backend em processo separado          │
+│  • Aguarda 3 segundos                           │
+│  • Lança Frontend                               │
+│  • Gerencia ciclo de vida                       │
+└──────────────┬──────────────────┬───────────────┘
+               │                  │
+      ┌────────▼─────────┐  ┌────▼──────────┐
+      │  BACKEND (API)   │  │ FRONTEND (GUI)│
+      │  FastAPI:8000    │  │ CustomTkinter │
+      └────────┬─────────┘  └────┬──────────┘
+               │                  │
+               │  HTTP REST API   │
+               └─────────┬────────┘
+                         │
+              ┌──────────▼──────────┐
+              │ FIREBASE FIRESTORE  │
+              │ • usuarios          │
+              │ • personagens       │
+              │ • missions          │
+              └─────────────────────┘
+```
 
-#### **2. Faça Login**
-- Insira suas credenciais
-- Sistema gerará um **JWT token** (válido por 30 minutos)
-- Você será redirecionado para a **Home Screen**
+### 🔄 Fluxo de Execução (`run.py`)
 
-#### **3. Crie seu Primeiro Personagem**
-- Clique em **"⚔️ Criar Novo Personagem"**
-- Escolha um **nome único** para seu personagem
-- Selecione uma **classe** (veja stats e habilidades)
-- Escolha uma **cor estratégica** (vantagem em combate)
-- Confirme a criação
+**O `run.py` é o coração da aplicação**. Ele orquestra tudo:
 
-#### **4. Explore o Jogo**
-- **Ver Detalhes**: Visualize stats completos do personagem
-- **Acessar Loja**: Compre e venda itens
-- **Fazer Missões**: Complete objetivos e ganhe recompensas
-- **Gerenciar Inventário**: Organize seus itens
+```python
+# 1. Localiza diretórios
+project_root = os.path.dirname(os.path.abspath(__file__))
+backend_dir = os.path.join(project_root, "Backend - API")
 
-### 🛡️ Limites e Restrições
+# 2. Inicia Backend em background
+api_process = subprocess.Popen([sys.executable, "main.py"], cwd=backend_dir)
+time.sleep(3)  # ⏱️ Aguarda API ficar pronta
 
-| Limite | Valor | Observação |
-|--------|-------|------------|
-| **Personagens por Usuário** | 3 | Máximo permitido |
-| **Nome de Personagem** | Único | Por usuário |
-| **Token JWT** | 30 min | Tempo de expiração |
-| **Exclusão de Personagem** | Confirmação obrigatória | Proteção contra acidentes |
+# 3. Verifica se API iniciou corretamente
+if api_process.poll() is not None:
+    print("❌ Erro ao iniciar API")
+    return
+
+# 4. Lança Frontend
+subprocess.run('python Frontend/main.py', shell=True)
+
+# 5. Mantém processos rodando
+api_process.wait()
+
+# 6. Trata Ctrl+C graciosamente
+except KeyboardInterrupt:
+    api_process.terminate()
+```
+
+**Por que `run.py`?**
+- ✅ Sincronização garantida (backend pronto antes do frontend)
+- ✅ Um único comando para executar tudo
+- ✅ Encerramento gracioso (Ctrl+C termina ambos)
+- ✅ Experiência de usuário profissional
 
 ---
 
-## 📁 Estrutura do Projeto
+## 📂 Estrutura do Código
 
 ```
 MidianText-RPG_API/
 │
-├── run.py                          # 🚀 Launcher principal (inicia backend + frontend)
-├── README.md                       # 📖 Documentação do projeto
-├── requirements.txt                # 📦 Dependências Python
+├── 🚀 run.py                    # ⭐ EXECUTE ESTE ARQUIVO!
 │
-├── Backend - API/                  # ⚙️ Servidor FastAPI
-│   ├── main.py                     # Aplicação principal FastAPI
+├── ⚙️ Backend - API/
+│   ├── main.py                  # Servidor FastAPI (porta 8000)
+│   │                            # • Registra rotas (login, personagens, missões)
+│   │                            # • Configura CORS
+│   │                            # • Inicia Uvicorn
 │   │
 │   └── commands/
-│       ├── database.py             # Configuração Firebase Firestore
-│       ├── func_senhas.py          # Hashing bcrypt para senhas
-│       ├── key_manager.py          # Gerenciamento de JWT tokens
-│       ├── missions_data.py        # Dados de missões e NPCs
+│       ├── database.py          # Conexão Firebase
+│       ├── func_senhas.py       # Bcrypt (hash de senhas)
+│       ├── key_manager.py       # JWT tokens
 │       │
-│       ├── keys/
-│       │   └── firebase.json       # 🔑 Credenciais Firebase (NÃO COMMITAR!)
-│       │
-│       ├── models/                 # 📋 Modelos Pydantic
+│       ├── models/              # Pydantic (validação)
 │       │   ├── user_model.py
 │       │   ├── character_model.py
-│       │   ├── character_creation_model.py
-│       │   ├── mission_model.py
-│       │   ├── items_table.py
+│       │   ├── items_table.py   # Catálogo da loja
 │       │   │
-│       │   └── classes/            # Classes de personagem
-│       │       ├── _main_classes.py
-│       │       ├── assassino_class.py
-│       │       ├── arqueiro_class.py
-│       │       ├── mage_class.py
-│       │       └── soldado_class.py
+│       │   └── classes/         # 4 Classes jogáveis
+│       │       ├── assassino_class.py   # 🗡️ SPD + Crítico
+│       │       ├── arqueiro_class.py    # 🏹 Alcance + Precisão
+│       │       ├── mage_class.py        # 🔮 MAG + Controle
+│       │       └── soldado_class.py     # 🛡️ HP + DEF
 │       │
-│       └── routes/                 # 🛤️ Endpoints da API
-│           ├── login.py            # Autenticação (register/login)
-│           ├── personagens.py      # CRUD de personagens
-│           └── missions.py         # Sistema de missões
+│       └── routes/              # Endpoints
+│           ├── login.py         # POST /register, /login
+│           ├── personagens.py   # CRUD de personagens
+│           └── missions.py      # Sistema de missões
 │
-└── Frontend/                       # 🖥️ Interface Gráfica
-    ├── main.py                     # Aplicação principal GUI
-    ├── api_client.py               # Cliente HTTP para API
-    ├── shop.py                     # Janela da loja
-    ├── missions.py                 # Janela de missões
-    └── character_creator.py        # Criador de personagens
+└── 🖥️ Frontend/
+    ├── main.py                  # Interface CustomTkinter
+    │                            # • App (controller)
+    │                            # • LoginScreen
+    │                            # • HomeScreen (gerenciar personagens)
+    │                            # • GameScreen (jogar)
+    │
+    ├── api_client.py            # Cliente HTTP (requests)
+    ├── shop.py                  # Janela da loja
+    ├── missions.py              # Janela de missões
+    └── character_creator.py     # Criador de personagens
 ```
 
 ---
 
-## ⚔️ Sistemas de Jogo
+## ⚔️ Mecânicas de Jogo
 
 ### 🎭 Classes de Personagem
 
-#### **🗡️ Assassino**
-```
-Especialista em velocidade e ataques críticos letais
+Todas as classes herdam de `MainClasses` com atributos:
 
-📊 Stats Base:
-├─ HP: 80    │ ❤️ Vida moderada
-├─ STR: 12   │ ⚔️ Ataque médio
-├─ MAG: 5    │ ✨ Magia baixa
-├─ SPD: 15   │ ⚡ Velocidade alta
-├─ LUCK: 12  │ 🍀 Sorte alta (críticos)
-├─ DEF: 6    │ 🛡️ Defesa baixa
-└─ MOV: 8    │ 👣 Mobilidade alta
-
-💥 Habilidades:
-• Ataque Furtivo - Dano crítico aumentado
-• Evasão Crítica - Esquiva aprimorada
-
-🎒 Item Inicial: Adagas Gêmeas (+5 STR, Chance de Crítico)
+```python
+hp_max   # Vida máxima
+hp_tmp   # Vida atual
+strg     # Força (dano físico)
+mag      # Magia (dano mágico)
+spd      # Velocidade (ordem de turno)
+luck     # Sorte (chance de crítico)
+defe     # Defesa (redução de dano)
+mov      # Mobilidade (tiles por turno)
+color    # Cor estratégica (vantagem em combate)
 ```
 
-#### **🏹 Arqueiro**
+#### Comparativo de Classes
+
+| Classe | HP | STR | MAG | SPD | DEF | Especialidade |
+|--------|----|----|----|----|-----|---------------|
+| 🗡️ Assassino | 80 | 12 | 5 | **15** | 6 | **Velocidade** + Críticos |
+| 🏹 Arqueiro | 85 | 10 | 7 | 12 | 7 | **Alcance** + Precisão |
+| 🔮 Mago | 70 | 5 | **18** | 8 | 5 | **Magia** + Controle |
+| 🛡️ Soldado | **110** | 14 | 4 | 7 | **12** | **Tank** + Resistência |
+
+### 🎨 Sistema de Cores (Vantagem Estratégica)
+
+**Multiplicador de Dano: 1.5x**
+
 ```
-Mestre do combate à distância e precisão mortal
+🔴 Vermelho  →  VENCE  →  🟢 Verde
+     ↑                         ↓
+     |                       VENCE
+   VENCE                       |
+     |                         ↓
+🔵 Azul      ←  VENCE  ←  🔴 Vermelho
 
-📊 Stats Base:
-├─ HP: 85    │ ❤️ Vida moderada
-├─ STR: 10   │ ⚔️ Ataque médio
-├─ MAG: 7    │ ✨ Magia baixa
-├─ SPD: 12   │ ⚡ Velocidade boa
-├─ LUCK: 10  │ 🍀 Sorte moderada
-├─ DEF: 7    │ 🛡️ Defesa baixa
-└─ MOV: 7    │ 👣 Mobilidade média
-
-🎯 Habilidades:
-• Tiro Preciso - Acerto garantido
-• Flecha Múltipla - Ataque em área
-
-🎒 Item Inicial: Arco Élfico (+4 STR, Alcance Aumentado)
-```
-
-#### **🔮 Mago**
-```
-Dominador das artes arcanas e feitiços devastadores
-
-📊 Stats Base:
-├─ HP: 70    │ ❤️ Vida baixa
-├─ STR: 5    │ ⚔️ Ataque baixo
-├─ MAG: 18   │ ✨ Magia muito alta
-├─ SPD: 8    │ ⚡ Velocidade baixa
-├─ LUCK: 8   │ 🍀 Sorte moderada
-├─ DEF: 5    │ 🛡️ Defesa muito baixa
-└─ MOV: 6    │ 👣 Mobilidade baixa
-
-✨ Habilidades:
-• Bola de Fogo - Dano mágico em área
-• Escudo Arcano - Proteção mágica
-
-🎒 Item Inicial: Cajado Arcano (+6 MAG, Reduz Custo de Mana)
+⚫ Cinza = Neutro (sem bônus)
 ```
 
-#### **🛡️ Soldado**
+**Exemplo**:
 ```
-Tanque resistente e protetor do grupo
+Assassino 🔴 (STR 12) vs Mago 🟢 (DEF 5)
+Dano Base: 12 - 5 = 7
+Multiplicador: 1.5x (Vermelho > Verde)
+Dano Final: 7 × 1.5 = 10.5 ≈ 11 HP
+```
 
-📊 Stats Base:
-├─ HP: 110   │ ❤️ Vida muito alta
-├─ STR: 14   │ ⚔️ Ataque alto
-├─ MAG: 4    │ ✨ Magia muito baixa
-├─ SPD: 7    │ ⚡ Velocidade baixa
-├─ LUCK: 6   │ 🍀 Sorte baixa
-├─ DEF: 12   │ 🛡️ Defesa muito alta
-└─ MOV: 5    │ 👣 Mobilidade muito baixa
-
-🛡️ Habilidades:
-• Bloqueio Defensivo - Reduz dano recebido
-• Contra-Ataque - Revida após bloqueio
-
-🎒 Item Inicial: Escudo de Ferro (+4 DEF, Redução de Dano)
+**Código (Simplificado)**:
+```python
+def calculate_color_advantage(attacker, defender):
+    advantages = {
+        "vermelho": "verde",
+        "verde": "azul",
+        "azul": "vermelho"
+    }
+    
+    if advantages.get(attacker) == defender:
+        return 1.5  # Vantagem
+    elif advantages.get(defender) == attacker:
+        return 0.67  # Desvantagem
+    else:
+        return 1.0  # Neutro
 ```
 
 ---
 
-### 🎨 Sistema de Cores (Vantagem de Combate)
+## 📡 Endpoints da API
 
-```
-        🔴 VERMELHO
-         /       \
-        /         \
-    vence        perde
-      /             \
-     ↓               ↓
-🟢 VERDE ─────────> 🔵 AZUL
-           vence
+### Base URL: `http://127.0.0.1:8000`
 
-⚫ CINZA = Neutro (sem vantagens)
-```
+#### 🔐 Autenticação
 
-**📐 Multiplicador de Vantagem: 1.5x de dano**
-
-| Atacante | vs | Defensor | Resultado |
-|----------|---|----------|-----------|
-| 🔴 Vermelho | → | 🟢 Verde | **150% de dano** |
-| 🟢 Verde | → | 🔵 Azul | **150% de dano** |
-| 🔵 Azul | → | 🔴 Vermelho | **150% de dano** |
-| ⚫ Cinza | → | Qualquer | **100% de dano** (neutro) |
-
-**💡 Dica Estratégica**: Escolha a cor do seu personagem pensando nos inimigos que você enfrentará!
-
----
-
-### 🎒 Sistema de Itens
-
-#### **Itens Iniciais** (Todo personagem começa com)
-- 🧪 **Poção de Cura** x3 - Restaura 30 HP
-- 📜 **Fuga** x1 - Permite escapar de batalha
-
-#### **Catálogo da Loja**
-
-**💊 Consumíveis**
-| Item | Preço | Efeito | Venda |
-|------|-------|--------|-------|
-| 🧪 Poção de Cura | 50 🪙 | +25 HP | 25 🪙 |
-| 🧪 Poção Grande | 120 🪙 | +50 HP | 60 🪙 |
-| 📜 Fuga | 100 🪙 | Escapar de batalha | 50 🪙 |
-| 💪 Elixir de Força | 80 🪙 | +5 STR (temp) | 40 🪙 |
-| ✨ Elixir de Magia | 80 🪙 | +5 MAG (temp) | 40 🪙 |
-
-**⚔️ Armas (Específicas por Classe)**
-| Item | Classe | Preço | Bônus | Venda |
-|------|--------|-------|-------|-------|
-| 🗡️ Adagas Gêmeas | Assassino | 300 🪙 | +5 STR, Crítico | 150 🪙 |
-| 🏹 Arco Élfico | Arqueiro | 350 🪙 | +4 STR, Alcance | 175 🪙 |
-| 🔮 Cajado Arcano | Mago | 400 🪙 | +6 MAG, -Mana | 200 🪙 |
-
-**🛡️ Armaduras**
-| Item | Classe | Preço | Bônus | Venda |
-|------|--------|-------|-------|-------|
-| 🛡️ Escudo de Ferro | Soldado | 250 🪙 | +4 DEF, -Dano | 125 🪙 |
-
-**💰 Economia**
-- Cada personagem **inicia com 100 moedas de ouro**
-- Itens vendidos rendem **50% do valor original**
-- Todas as transações são **persistidas no Firebase** em tempo real
-
----
-
-### 🛍️ Como Usar a Loja
-
-1. **Acesse a Loja**: No menu do jogo, clique em **🛍️ Loja**
-2. **Navegue pelos Itens**: Use filtros (Todos, Consumível, Arma, Armadura)
-3. **Compre Itens**: 
-   - Selecione o item desejado
-   - Clique em **🛒 Comprar**
-   - Confirme a transação
-4. **Venda Itens**:
-   - Acesse seu **Inventário** (lado direito)
-   - Selecione o item para vender
-   - Clique em **💸 Vender**
-   - Receba 50% do valor
-
-**⚠️ Validações Automáticas**:
-- ✅ Verificação de ouro suficiente
-- ✅ Restrições de classe para equipamentos
-- ✅ Verificação de estoque no inventário
-- ✅ Transações atômicas no Firebase
-
----
-
-## 🔌 API Reference
-
-### 🔐 Autenticação
-
-#### **POST** `/register`
-Registra um novo usuário no sistema.
-
-**Request Body:**
+**POST `/register`**
 ```json
-{
-  "username": "string",
-  "password": "string"
+Request:  {"username": "player1", "password": "senha123"}
+Response: {"message": "Usuário criado com sucesso"}
+```
+
+**POST `/login`**
+```json
+Request:  {"username": "player1", "password": "senha123"}
+Response: {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "token_type": "bearer",
+    "username": "player1"
 }
 ```
 
-**Response (201 Created):**
-```json
-{
-  "message": "Usuário criado com sucesso"
-}
+#### 🎭 Personagens
+
+**GET `/personagens`** (Requer autenticação)
 ```
-
----
-
-#### **POST** `/login`
-Autentica usuário e retorna JWT token.
-
-**Request Body:**
-```json
-{
-  "username": "string",
-  "password": "string"
-}
-```
-
-**Response (200 OK):**
-```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "bearer",
-  "username": "string"
-}
-```
-
----
-
-### 🎭 Personagens
-
-#### **GET** `/personagens`
-Lista todos os personagens do usuário autenticado.
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Response (200 OK):**
-```json
-[
-  {
-    "id": "uuid-v4",
-    "name": "Aragorn",
-    "character_class": "Soldado",
-    "level": 5,
-    "color": "vermelho",
-    "gold": 350,
-    "exp": 1250,
-    "status": {
-      "hp_max": 110,
-      "hp_atual": 95,
-      "strg": 14,
-      "mag": 4,
-      "spd": 7,
-      "luck": 6,
-      "defe": 12,
-      "mov": 5
-    },
-    "itens": {
-      "Poção de Cura": 3,
-      "Escudo de Ferro": 1
-    },
-    "habilidades": [
-      "Bloqueio Defensivo",
-      "Contra-Ataque"
-    ]
-  }
+Headers: Authorization: Bearer <token>
+Response: [
+    {
+        "id": "uuid",
+        "name": "Aragorn",
+        "character_class": "Soldado",
+        "level": 1,
+        "color": "vermelho",
+        "gold": 100,
+        "status": {...},
+        "itens": {...},
+        "habilidades": [...]
+    }
 ]
 ```
 
----
-
-#### **POST** `/personagens/criar`
-Cria um novo personagem (máximo 3 por usuário).
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Request Body:**
+**POST `/personagens/criar`**
 ```json
-{
-  "name": "Legolas",
-  "character_class": "Arqueiro",
-  "color": "verde"
-}
-```
-
-**Response (201 Created):**
-```json
-{
-  "message": "Personagem criado com sucesso",
-  "character": {
-    "id": "uuid-v4",
+Headers: Authorization: Bearer <token>
+Request: {
     "name": "Legolas",
     "character_class": "Arqueiro",
-    "level": 1,
-    "color": "verde",
-    "gold": 100,
-    ...
-  }
+    "color": "verde"
+}
+Response: {
+    "message": "Personagem criado",
+    "character": {...}
+}
+```
+
+**DELETE `/personagens/{name}`**
+```
+Headers: Authorization: Bearer <token>
+Response: {"message": "Personagem deletado"}
+```
+
+#### 🛍️ Loja
+
+**POST `/shop/buy`**
+```json
+Headers: Authorization: Bearer <token>
+Request: {
+    "character_name": "Aragorn",
+    "item_name": "Poção de Cura",
+    "quantity": 3
+}
+Response: {
+    "message": "Comprado",
+    "gold_remaining": 50,
+    "item_quantity": 6
+}
+```
+
+**POST `/shop/sell`**
+```json
+Request: {
+    "character_name": "Aragorn",
+    "item_name": "Poção de Cura",
+    "quantity": 1
+}
+Response: {
+    "message": "Vendido",
+    "gold_earned": 25,  # 50% do preço
+    "gold_total": 75
 }
 ```
 
 ---
 
-#### **DELETE** `/personagens/{character_name}`
-Deleta um personagem específico.
+## 💾 Banco de Dados (Firebase)
 
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Response (200 OK):**
-```json
-{
-  "message": "Personagem 'Legolas' deletado com sucesso"
-}
-```
-
----
-
-#### **GET** `/personagens/classes`
-Retorna informações de todas as classes disponíveis.
-
-**Response (200 OK):**
-```json
-{
-  "Assassino": {
-    "name": "Assassino",
-    "description": "Especialista em velocidade e ataques críticos",
-    "stats": {
-      "hp_max": 80,
-      "strg": 12,
-      "mag": 5,
-      ...
-    },
-    "habilidades": ["Ataque Furtivo", "Evasão Crítica"]
-  },
-  ...
-}
-```
-
----
-
-### 🛍️ Loja
-
-#### **GET** `/shop/items`
-Lista todos os itens disponíveis na loja.
-
-**Response (200 OK):**
-```json
-[
-  {
-    "name": "Poção de Cura",
-    "type": "Consumível",
-    "price": 50,
-    "effect": "Restaura 25 HP",
-    "class_restriction": null
-  },
-  ...
-]
-```
-
----
-
-#### **POST** `/shop/buy`
-Compra um item da loja.
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Request Body:**
-```json
-{
-  "character_name": "Aragorn",
-  "item_name": "Poção de Cura",
-  "quantity": 3
-}
-```
-
-**Response (200 OK):**
-```json
-{
-  "message": "Item comprado com sucesso",
-  "gold_remaining": 250,
-  "item_quantity": 6
-}
-```
-
----
-
-#### **POST** `/shop/sell`
-Vende um item do inventário (50% do valor).
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Request Body:**
-```json
-{
-  "character_name": "Aragorn",
-  "item_name": "Poção de Cura",
-  "quantity": 1
-}
-```
-
-**Response (200 OK):**
-```json
-{
-  "message": "Item vendido com sucesso",
-  "gold_earned": 25,
-  "gold_total": 275
-}
-```
-
----
-
-#### **GET** `/personagens/{character_name}/gold`
-Retorna o ouro atual do personagem.
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Response (200 OK):**
-```json
-{
-  "character_name": "Aragorn",
-  "gold": 350
-}
-```
-
----
-
-### 🗺️ Missões
-
-#### **GET** `/missions`
-Lista todas as missões disponíveis.
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Response (200 OK):**
-```json
-{
-  "missions": [
-    {
-      "id": "mission_001",
-      "name": "Floresta Sombria",
-      "difficulty": "Fácil",
-      "rewards": {
-        "gold": 50,
-        "exp": 100
-      }
-    },
-    ...
-  ]
-}
-```
-
----
-
-#### **POST** `/missions/start`
-Inicia uma missão com um personagem.
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Request Body:**
-```json
-{
-  "character_name": "Aragorn",
-  "mission_id": "mission_001"
-}
-```
-
----
-
-#### **POST** `/missions/action`
-Executa uma ação durante a missão.
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Request Body:**
-```json
-{
-  "character_name": "Aragorn",
-  "mission_id": "mission_001",
-  "action": "move|fight|collect|flee",
-  "target": "enemy_goblin"
-}
-```
-
----
-
-### 📊 Status Codes
-
-| Código | Significado | Uso |
-|--------|-------------|-----|
-| **200** | OK | Requisição bem-sucedida |
-| **201** | Created | Recurso criado com sucesso |
-| **400** | Bad Request | Dados inválidos ou ausentes |
-| **401** | Unauthorized | Token inválido ou ausente |
-| **404** | Not Found | Recurso não encontrado |
-| **409** | Conflict | Conflito (ex: nome duplicado) |
-| **500** | Internal Server Error | Erro no servidor |
-
----
-
-## 💾 Estrutura do Banco de Dados
-
-### Firebase Firestore Schema
+### Estrutura Firestore
 
 ```json
 {
-  "users": {
-    "username_123": {
-      "username": "JogadorPro",
+  "usuarios": {
+    "user_id_123": {
+      "username": "player1",
       "password_hash": "$2b$12$...",
-      "created_at": "2025-10-26T10:30:00Z",
-      
-      "personagens": {
-        "Aragorn": {
-          "id": "550e8400-e29b-41d4-a716-446655440000",
+      "created_at": "2025-10-27"
+    }
+  },
+  
+  "personagens": {
+    "user_id_123": {
+      "personagens": [
+        {
+          "id": "uuid",
           "name": "Aragorn",
           "character_class": "Soldado",
-          "level": 5,
+          "level": 1,
           "color": "vermelho",
           "gold": 350,
-          "exp": 1250,
+          "exp": 0,
           
           "status": {
             "hp_max": 110,
-            "hp_atual": 95,
+            "hp_tmp": 110,
             "strg": 14,
             "mag": 4,
             "spd": 7,
@@ -849,18 +399,9 @@ Authorization: Bearer <token>
           "habilidades": [
             "Bloqueio Defensivo",
             "Contra-Ataque"
-          ],
-          
-          "created_at": "2025-10-20T15:45:00Z"
-        },
-        
-        "Legolas": {
-          "id": "650e8400-e29b-41d4-a716-446655440001",
-          "name": "Legolas",
-          "character_class": "Arqueiro",
-          ...
+          ]
         }
-      }
+      ]
     }
   },
   
@@ -868,12 +409,7 @@ Authorization: Bearer <token>
     "mission_001": {
       "name": "Floresta Sombria",
       "difficulty": "Fácil",
-      "map": [...],
-      "enemies": [...],
-      "rewards": {
-        "gold": 50,
-        "exp": 100
-      }
+      "rewards": {"gold": 50, "exp": 100}
     }
   }
 }
@@ -881,198 +417,173 @@ Authorization: Bearer <token>
 
 ---
 
-## 🐛 Troubleshooting
+## 🛠️ Guia de Desenvolvimento
 
-### ❌ Erro: "Não é possível conectar à API"
+### Modificar uma Classe
 
-**Sintomas**: Frontend não consegue se comunicar com o backend
+**Exemplo: Aumentar HP do Mago**
 
-**Causas Possíveis**:
-- Backend não está rodando
-- Porta 8000 está ocupada
-- Firewall bloqueando conexão
+```python
+# Arquivo: Backend - API/commands/models/classes/mage_class.py
 
-**Soluções**:
-```bash
-# Verifique se o backend está rodando
-cd "Backend - API"
-python main.py
+class Mago(MainClasses):
+    def __init__(self):
+        super().__init__()
+        self.hp_max = 85  # Era 70, agora 85
+        self.hp_tmp = 85
+        # ... resto do código
+```
 
-# Verifique se a porta 8000 está livre (Windows)
-netstat -ano | findstr :8000
+### Adicionar Novo Item na Loja
 
-# Teste a conexão
-curl http://127.0.0.1:8000/
+```python
+# Arquivo: Backend - API/commands/models/items_table.py
+
+class ItemTable:
+    ITEMS = {
+        # ... itens existentes ...
+        
+        "Espada Flamejante": {
+            "type": "Arma",
+            "price": 500,
+            "effect": {"strg": 8, "fire_damage": 10},
+            "class_restriction": "Soldado"  # ou None
+        }
+    }
+```
+
+### Criar Nova Rota (Endpoint)
+
+```python
+# Arquivo: Backend - API/commands/routes/personagens.py
+
+@router.get("/personagens/{character_name}/inventory")
+def get_inventory(character_name: str, authorization: str = Header(None)):
+    # 1. Verificar token
+    user_id = verify_key(token)
+    
+    # 2. Buscar personagem
+    personagens_doc = personagens_collection.document(user_id).get()
+    personagens = personagens_doc.to_dict().get("personagens", [])
+    
+    # 3. Encontrar personagem específico
+    character = next((p for p in personagens if p["name"] == character_name), None)
+    
+    # 4. Retornar inventário
+    return {"inventory": character.get("itens", {})}
+```
+
+Não esqueça de registrar no `main.py`:
+```python
+# Backend - API/main.py
+from commands.routes.personagens import router as personagens_router
+app.include_router(personagens_router)
 ```
 
 ---
+
+## 🐛 Solução de Problemas
+
+### ❌ Erro: "Não consegue conectar à API"
+
+**Sintoma**: Frontend não abre ou não carrega personagens
+
+**Soluções**:
+```bash
+# 1. Verificar se backend está rodando
+# Abra http://127.0.0.1:8000/docs no navegador
+# Deve ver documentação Swagger
+
+# 2. Verificar porta 8000
+netstat -ano | findstr :8000  # Windows
+lsof -i :8000                  # Linux/Mac
+
+# 3. Reiniciar tudo
+# Ctrl+C para fechar
+python run.py  # Rodar novamente
+```
+
+### ❌ Erro: "Firebase credentials not found"
+
+**Sintoma**: API não inicia, erro de credenciais
+
+**Solução**:
+```bash
+# Verificar se arquivo existe
+ls "Backend - API/commands/keys/firebase.json"
+
+# Deve mostrar o arquivo. Se não:
+# 1. Baixe novamente do Firebase Console
+# 2. Coloque na pasta correta
+# 3. Renomeie para "firebase.json"
+```
 
 ### ❌ Erro: "Token inválido ou expirado"
 
-**Sintomas**: Requisições retornam 401 Unauthorized
+**Sintoma**: Após algum tempo, pede login novamente
 
-**Causas Possíveis**:
-- JWT token expirou (30 minutos)
-- Token corrompido ou inválido
+**Explicação**: Tokens JWT expiram em 30 minutos (segurança)
 
-**Soluções**:
-1. Faça **logout** e **login** novamente
-2. Verifique se a `SECRET_KEY` é a mesma no servidor
-3. Limpe o cache e reinicie a aplicação
+**Solução**: Faça login novamente (comportamento esperado)
 
----
+### ❌ Erro: "Já existe 3 personagens"
 
-### ❌ Erro ao Inicializar Firebase
+**Sintoma**: Não consegue criar mais personagens
 
-**Sintomas**: 
-```
-firebase_admin.exceptions.InvalidArgumentError: 
-Could not load credentials
-```
+**Explicação**: Limite de 3 personagens por usuário (regra de jogo)
 
-**Causas Possíveis**:
-- Arquivo `firebase.json` não encontrado
-- Caminho incorreto
-- Permissões de arquivo
-
-**Soluções**:
-```bash
-# Verifique se o arquivo existe
-ls "Backend - API/commands/keys/firebase.json"
-
-# Verifique permissões (Linux/Mac)
-chmod 644 "Backend - API/commands/keys/firebase.json"
-
-# Valide o JSON
-python -m json.tool "Backend - API/commands/keys/firebase.json"
-```
+**Solução**: Delete um personagem existente antes de criar novo
 
 ---
 
-### ❌ Personagem Não Aparece Após Criação
-
-**Sintomas**: Personagem criado mas não aparece na lista
-
-**Causas Possíveis**:
-- Problema de sincronização
-- Cache do frontend
-- Erro na persistência
-
-**Soluções**:
-1. Clique no botão **Recarregar** (se disponível)
-2. Faça **logout** e **login** novamente
-3. Verifique no **Firebase Console** se os dados foram salvos
-4. Verifique logs do backend para erros
-
----
-
-### ❌ Botões Não Aparecem em Diálogos
-
-**Sintomas**: Janelas de confirmação sem botões visíveis
-
-**Status**: ✅ **CORRIGIDO** na versão atual
-
-**Detalhes**: Layout simplificado usando `pack()` ao invés de `grid()` com frames transparentes.
-
----
-
-### 🔍 Ativando Logs de Debug
-
-**Backend:**
-```python
-# Backend - API/main.py
-import uvicorn
-
-if __name__ == "__main__":
-    uvicorn.run(
-        app, 
-        host="0.0.0.0", 
-        port=8000, 
-        log_level="debug"  # ← Ativa logs detalhados
-    )
-```
-
-**Frontend:**
-```python
-# Frontend/main.py
-# Adicione prints estratégicos
-print(f"[DEBUG] Token: {self.controller.access_token}")
-print(f"[DEBUG] Personagens carregados: {personagens}")
-print(f"[DEBUG] Ouro atual: {gold}")
-```
-
----
-
-## 🚀 Roadmap
+## 🚀 Roadmap (Futuro)
 
 ### ✅ Implementado
 - [x] Sistema de autenticação JWT
-- [x] CRUD completo de personagens
+- [x] CRUD de personagens (limite de 3)
 - [x] 4 classes balanceadas
-- [x] Sistema de cores estratégico
+- [x] Sistema de cores (vantagem de combate)
 - [x] Loja com economia persistente
-- [x] Sistema de inventário
-- [x] Exclusão de personagens com confirmação
-- [x] Interface gráfica moderna
+- [x] Inventário completo
+- [x] Confirmação de exclusão
+- [x] Launcher automatizado (`run.py`)
 
 ### 🔄 Em Desenvolvimento
-- [ ] Sistema de combate em tempo real
-- [ ] Missões com narrativa expandida
-- [ ] Sistema de crafting de itens
-- [ ] Achievements e conquistas
+- [ ] Sistema de combate tático em grid
+- [ ] Missões com narrativa
+- [ ] Crafting de itens
 
 ### 📋 Planejado
-- [ ] Modo multiplayer (PvP e Co-op)
+- [ ] Modo multiplayer (PvP/Co-op)
 - [ ] Sistema de guildas
-- [ ] Mais classes (Necromante, Paladino, Druida)
-- [ ] Sistema de pets e montarias
-- [ ] Ranking global de jogadores
-- [ ] Eventos temporários e sazonais
-- [ ] Sistema de trading entre jogadores
-- [ ] Modo história com cutscenes
-
-### 💭 Em Consideração
-- [ ] Versão web (React + TypeScript)
-- [ ] Aplicativo mobile (React Native)
-- [ ] Integração com Discord
-- [ ] Sistema de moedas premium
-- [ ] Modo Battle Royale
-- [ ] API pública para desenvolvedores
+- [ ] Mais classes (Necromante, Paladino)
+- [ ] Sistema de pets
+- [ ] Eventos temporários
+- [ ] Ranking global
 
 ---
 
-## 📄 Licença
+## 👤 Créditos
 
-Este projeto é **proprietário** e de uso exclusivo do autor.  
-**Todos os direitos reservados © 2025 Carlo Terzaghi**
+**Desenvolvido por**: Carlo Terzaghi  
+**GitHub**: [@carloterzaghi](https://github.com/carloterzaghi)  
+**Licença**: Proprietário © 2025  
 
----
+### Tecnologias Utilizadas
 
-## 👤 Autor
+- **FastAPI** - Framework web moderno
+- **CustomTkinter** - Interface gráfica clean
+- **Firebase** - Database em nuvem
+- **Bcrypt** - Segurança de senhas
+- **JWT** - Autenticação stateless
 
-**Carlo Terzaghi**  
-GitHub: [@carloterzaghi](https://github.com/carloterzaghi)  
-📧 Email: Disponível mediante solicitação
+### Agradecimentos
 
----
-
-## 🙏 Agradecimentos
-
-- 🐍 **Comunidade Python Brasil** - Suporte e inspiração
-- ⚡ **Equipe FastAPI** - Framework incrível
-- 🎨 **Desenvolvedores CustomTkinter** - GUI moderna
-- 🔥 **Firebase Team** - Cloud database confiável
-- 🧪 **Beta Testers** - Feedback valioso
-
----
-
-## 📞 Suporte
-
-Encontrou um bug? Tem uma sugestão? 
-
-1. 🐛 **Issues**: [Abra uma issue](https://github.com/carloterzaghi/MidianText-RPG_API/issues)
-2. 💬 **Discussões**: [Inicie uma discussão](https://github.com/carloterzaghi/MidianText-RPG_API/discussions)
-3. 📧 **Email**: Entre em contato diretamente
+- Comunidade Python Brasil
+- Equipe FastAPI
+- Desenvolvedores CustomTkinter
+- Firebase Team
+- Beta Testers
 
 ---
 
@@ -1080,172 +591,9 @@ Encontrou um bug? Tem uma sugestão?
 
 **⚔️ Bem-vindo ao mundo de Midian! ⚔️**
 
-Desenvolvido com ❤️ por Carlo Terzaghi
+Desenvolvido com ❤️ em Python
 
-**Última Atualização**: 26 de Outubro de 2025  
+**Última Atualização**: 27 de Outubro de 2025  
 **Versão**: 1.0.0
 
 </div>
-├── requirements.txt
-├── run.py
-└── README.md
-```
-
-## Funcionalidades
-
-### Backend (API)
-- ✅ Registro e autenticação de usuários com JWT
-- ✅ Criação e gerenciamento de personagens (máximo 3 por usuário)
-- ✅ Sistema de classes (Assassino, Arqueiro, Mago, Soldado)
-- ✅ Sistema de cores com vantagens de combate
-- ✅ Catálogo de itens (armas, armaduras, consumíveis)
-- 🔄 Sistema de loja (em implementação)
-- 🔄 Sistema de combate (em desenvolvimento)
-
-### Frontend (Interface Gráfica)
-- ✅ Tela de Login e Registro
-- ✅ Gerenciamento de personagens
-- ✅ Criação de personagens com preview de stats
-- ✅ **Loja do Jogo** - Sistema completo integrado!
-  - 🛒 Compra de itens (persistido no Firebase)
-  - 💰 Sistema de ouro (atualizado em tempo real)
-  - 🎒 Visualização de inventário
-  - 💸 Venda de itens (50% do valor original)
-  - 🔍 Filtros por tipo (Consumível, Arma, Armadura)
-  - ⚔️ Restrições por classe para equipamentos
-  - ✅ **Transações persistidas no Firebase!**
-- 🔄 Sistema de missões (em desenvolvimento)
-
-### Como usar a Loja
-
-1. Faça login e selecione um personagem
-2. No menu do jogo, clique em **🛍️ Loja**
-3. Na loja você pode:
-   - **Comprar itens**: Selecione um item e clique em "🛒 Comprar"
-   - **Vender itens**: Vá até seu inventário (lado direito) e clique em "💸 Vender"
-   - **Filtrar itens**: Use o menu de filtros para ver apenas consumíveis, armas ou armaduras
-4. Cada personagem começa com **100 moedas de ouro** ao ser criado
-
-### Itens Disponíveis na Loja
-
-**Consumíveis:**
-- 🧪 Poção de Cura (50 ouro) - Restaura 25 HP
-- 🧪 Poção Grande de Cura (120 ouro) - Restaura 50 HP
-- 📜 Fuga (100 ouro) - Permite escapar de combates
-- 💪 Elixir de Força (80 ouro) - +5 Força temporária
-- ✨ Elixir de Magia (80 ouro) - +5 Magia temporária
-
-**Armas (específicas por classe):**
-- 🗡️ Adagas Gêmeas (300 ouro) - Assassino
-- 🏹 Arco Élfico (350 ouro) - Arqueiro
-- 🔮 Cajado Arcano (400 ouro) - Mago
-
-**Armaduras:**
-- 🛡️ Escudo de Ferro (250 ouro) - Soldado
-
-## Observações
-
-- O token gerado no login é temporário (expira em 30 minutos) e garante que cada usuário só acesse seus próprios dados.
-- Mantenha sua chave secreta (`SECRET_KEY`) protegida e nunca compartilhe o arquivo `firebase.json`
-
-## Próximos Passos (Endpoints Backend para Loja)
-
-~~Para que a loja funcione completamente integrada com o backend, os seguintes endpoints precisam ser implementados:~~
-
-### ✅ IMPLEMENTADO! Sistema de Loja Completo
-
-Todos os endpoints foram implementados e estão funcionais:
-
-### 1. ✅ Transações da Loja
-```python
-# POST /shop/buy
-# Compra um item da loja
-# Body: { 
-#   "character_name": "NomePersonagem",
-#   "item_name": "Poção de Cura",
-#   "quantity": 1
-# }
-
-# POST /shop/sell
-# Vende um item do inventário (50% do valor)
-# Body: { 
-#   "character_name": "NomePersonagem",
-#   "item_name": "Poção de Cura",
-#   "quantity": 1
-# }
-
-# GET /shop/items
-# Retorna todos os itens disponíveis na loja
-
-# GET /personagens/{character_name}/gold
-# Retorna o ouro atual do personagem
-```
-
-### 2. ✅ Validações Implementadas
-- Verificação de ouro suficiente antes da compra
-- Validação de restrições de classe
-- Verificação de item no inventário antes da venda
-- Cálculo automático de preço de venda (50% do original)
-- Atualização automática do Firebase
-
-### 3. ✅ Persistência no Firebase
-- Campo `gold` salvo automaticamente
-- Inventário (`itens`) atualizado em tempo real
-- Transações atômicas garantidas
-
-**📖 Documentação completa em:** `INTEGRACAO_LOJA_FIREBASE.md`
-
----
-
-## Como Testar o Sistema de Loja
-
-1. **Inicie o sistema:**
-   ```bash
-   python run.py
-   ```
-
-2. **Crie um personagem novo** (receberá 100 moedas)
-
-3. **Abra a loja** no menu do jogo
-
-4. **Compre um item** (ex: Poção de Cura - 50 ouro)
-
-5. **Feche e reabra a loja** - O ouro estará atualizado! ✅
-
-6. **Venda um item** - Receba 50% do valor de volta
-
-7. **Verifique no Firebase Console** - Dados persistidos! ✅
-
----
-
-## Estrutura do Banco de Dados (Firebase)
-
-~~### Estrutura Sugerida no Firestore~~
-
-### ✅ Estrutura Implementada e Funcionando
-```json
-{
-  "users": {
-    "usuario123": {
-      "personagens": {
-        "Aragorn": {
-          "name": "Aragorn",
-          "character_class": "Soldado",
-          "level": 1,
-          "gold": 1000,
-          "itens": {
-            "Poção de Cura": 3,
-            "Escudo de Ferro": 1
-          },
-          "status": { ... }
-        }
-      }
-    }
-  }
-}
-```
-
-## Contribuições
-
-Este projeto está em desenvolvimento ativo. Sugestões e melhorias são bem-vindas!
-
