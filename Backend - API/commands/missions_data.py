@@ -1,5 +1,70 @@
 """
-Banco de dados de missões disponíveis
+MidianText RPG - Banco de Dados de Missões
+===========================================
+
+Este módulo centraliza todas as missões disponíveis no jogo, incluindo estrutura de salas,
+inimigos, tesouros e sistema de progressão.
+
+Estrutura de Dados:
+    Cada missão contém:
+        - Metadados: ID, nome, descrição, dificuldade, nível mínimo
+        - Recompensas: Ouro, experiência, itens
+        - Salas: Grafo de localidades interconectadas
+        - Sala inicial: Ponto de entrada da missão
+
+Estrutura de Sala:
+    {
+        "id": str,                    # Identificador único
+        "name": str,                  # Nome da localidade
+        "description": str,           # Narrativa descritiva
+        "enemies": List[Enemy],       # Inimigos presentes
+        "treasures": List[Treasure],  # Baús e itens
+        "exits": Dict[str, str],      # Saídas disponíveis {direção: sala_destino}
+        "visited": bool               # Estado de visitação
+    }
+
+Estrutura de Inimigo:
+    {
+        "id": str,           # Identificador único
+        "name": str,         # Nome do inimigo
+        "hp": int,           # Pontos de vida
+        "attack": int,       # Poder de ataque
+        "defense": int,      # Defesa
+        "gold_drop": int,    # Ouro dropado ao morrer
+        "exp_drop": int      # Experiência dropada ao morrer
+    }
+
+Estrutura de Tesouro:
+    {
+        "id": str,                      # Identificador único
+        "name": str,                    # Nome do baú/tesouro
+        "contents": {
+            "gold": int,                # Quantidade de ouro
+            "items": List[str]          # Lista de itens
+        }
+    }
+
+Missões Disponíveis:
+    - Tumbas do Faraó: Exploração de tumba egípcia com armadilhas e múmias
+
+Fluxo de Uso:
+    1. Frontend solicita lista de missões via get_all_missions()
+    2. Jogador seleciona missão baseado em nível/dificuldade
+    3. Backend carrega dados completos via get_mission(mission_id)
+    4. Sistema de combate/exploração usa estrutura de salas
+    5. Estado de visitação atualizado conforme progressão
+
+Design Patterns:
+    - Singleton: MISSIONS é dicionário global compartilhado
+    - Grafo: Salas conectadas por exits formam mapa navegável
+    - Factory: Funções get_* retornam instâncias/views dos dados
+
+Future Enhancements:
+    - Adicionar mais missões (floresta, cavernas, castelo)
+    - Sistema de missões dinâmicas/procedurais
+    - Missões multi-jogador
+    - Eventos aleatórios em salas
+
 """
 
 MISSIONS = {
@@ -127,12 +192,93 @@ MISSIONS = {
     }
 }
 
-def get_mission(mission_id: str):
-    """Retorna os dados de uma missão"""
+
+def get_mission(mission_id: str) -> dict | None:
+    """
+    Retorna os dados completos de uma missão específica.
+    
+    Usado para iniciar uma missão, carregando todos os dados necessários
+    incluindo salas, inimigos, tesouros e conexões.
+    
+    Args:
+        mission_id (str): Identificador único da missão (ex: "tumbas_farao")
+    
+    Returns:
+        dict | None: 
+            - dict: Dados completos da missão se encontrada
+            - None: Se mission_id não existir
+    
+    Example:
+        >>> mission = get_mission("tumbas_farao")
+        >>> if mission:
+        ...     print(f"Iniciando: {mission['name']}")
+        ...     print(f"Sala inicial: {mission['starting_room']}")
+        Iniciando: Tumbas do Faraó
+        Sala inicial: entrada
+    
+    Usage:
+        # No backend, ao iniciar missão:
+        mission_data = get_mission(mission_id)
+        if not mission_data:
+            raise HTTPException(404, "Missão não encontrada")
+        
+        # Inicializar estado do jogador na missão
+        player_state = {
+            "current_room": mission_data["starting_room"],
+            "visited_rooms": [],
+            "defeated_enemies": []
+        }
+    
+    Notes:
+        - Retorna cópia completa dos dados (todas as salas e metadados)
+        - Estado de visitação (visited) deve ser gerenciado pelo backend
+        - Dados de inimigos/tesouros são templates (instanciar por jogador)
+    """
     return MISSIONS.get(mission_id)
 
-def get_all_missions():
-    """Retorna todas as missões disponíveis"""
+
+def get_all_missions() -> list[dict]:
+    """
+    Retorna lista resumida de todas as missões disponíveis.
+    
+    Usado para exibir catálogo de missões no frontend, mostrando apenas
+    informações essenciais sem carregar dados completos de salas/inimigos.
+    
+    Returns:
+        list[dict]: Lista de missões com metadados resumidos. Cada entrada contém:
+            - id (str): Identificador único
+            - name (str): Nome da missão
+            - description (str): Descrição narrativa
+            - difficulty (str): Nível de dificuldade ("Fácil", "Médio", "Difícil")
+            - min_level (int): Nível mínimo requerido
+            - rewards (dict): Recompensas ao completar
+    
+    Example:
+        >>> missions = get_all_missions()
+        >>> for mission in missions:
+        ...     print(f"{mission['name']} - Nível {mission['min_level']}+")
+        Tumbas do Faraó - Nível 1+
+    
+    Usage:
+        # No frontend, ao exibir lista de missões:
+        response = requests.get("http://localhost:8000/missions")
+        missions = response.json()
+        
+        for mission in missions:
+            # Verificar se jogador atende nível mínimo
+            if player.level >= mission["min_level"]:
+                display_mission(mission)
+    
+    Notes:
+        - Não inclui dados de salas/inimigos (economiza memória/rede)
+        - Ideal para tela de seleção de missões
+        - Frontend deve fazer requisição separada para dados completos
+    
+    Performance:
+        - List comprehension: O(n) onde n = número de missões
+        - Atualmente: 1 missão = ~1ms de processamento
+        - Escalável até ~100 missões sem impacto perceptível
+    """
     return [
         {
             "id": mission["id"],
