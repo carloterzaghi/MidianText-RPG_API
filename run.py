@@ -9,10 +9,6 @@ O script gerencia o ciclo de vida completo da aplicação, incluindo:
 - Inicialização do servidor API em processo separado
 - Lançamento da interface gráfica do usuário
 - Tratamento de erros e encerramento gracioso
-
-Author: Carlo Terzaghi
-Version: 1.3
-Date: 2025
 """
 
 import subprocess
